@@ -32,9 +32,18 @@ for (const f of filesToCopy) {
   }
 }
 
-// Generate simple SVG/PNG icon placeholder for manifest icons
+// Copy PNG icons
+const iconsSrcDir = path.join(srcDir, 'icons');
 const iconsDir = path.join(distDir, 'icons');
 fs.mkdirSync(iconsDir, { recursive: true });
+
+if (fs.existsSync(iconsSrcDir)) {
+  const iconFiles = fs.readdirSync(iconsSrcDir);
+  for (const ic of iconFiles) {
+    fs.copyFileSync(path.join(iconsSrcDir, ic), path.join(iconsDir, ic));
+    console.log(`  ✓ Copied icon: ${ic}`);
+  }
+}
 
 const iconSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
   <rect width="128" height="128" rx="24" fill="#16A34A"/>

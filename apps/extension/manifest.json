@@ -1,8 +1,14 @@
 {
   "manifest_version": 3,
-  "name": "TurboGrab — Universal Video Downloader",
+  "name": "Mahi 4K Downloader — Universal Video Downloader",
   "version": "1.0.0",
-  "description": "Ultra-fast video downloader for YouTube, Instagram, X, TikTok, and 1000+ sites.",
+  "description": "Ultra-fast video downloader for YouTube, Instagram, X, TikTok, and 1000+ sites. Created by Munna Bhai.",
+  "icons": {
+    "16": "icons/icon-16.png",
+    "32": "icons/icon-32.png",
+    "48": "icons/icon-48.png",
+    "128": "icons/icon-128.png"
+  },
   "permissions": [
     "activeTab",
     "storage",
@@ -16,7 +22,13 @@
   ],
   "action": {
     "default_popup": "popup.html",
-    "default_title": "TurboGrab Video Downloader"
+    "default_title": "Mahi 4K Video Downloader",
+    "default_icon": {
+      "16": "icons/icon-16.png",
+      "32": "icons/icon-32.png",
+      "48": "icons/icon-48.png",
+      "128": "icons/icon-128.png"
+    }
   },
   "background": {
     "service_worker": "background.js"
