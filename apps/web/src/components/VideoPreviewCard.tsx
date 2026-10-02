@@ -66,26 +66,26 @@ export const VideoPreviewCard: React.FC<VideoPreviewCardProps> = ({
     return `~${(bytes / (1024 * 1024)).toFixed(0)} MB`;
   };
 
-  const getQualityDisplayName = (label: VideoQualityLabel) => {
+  const getQualityDetails = (label: VideoQualityLabel) => {
     switch (label) {
       case '8K':
-        return '8K Ultra HD (Highest Quality)';
+        return { title: '8K Ultra HD', desc: 'Highest Possible Definition', badge: '8K' };
       case '4K':
-        return '4K Ultra HD (2160p)';
+        return { title: '4K Ultra HD', desc: '2160p Cinematic Quality', badge: '4K' };
       case '2K':
-        return '2K Quad HD (1440p)';
+        return { title: '2K Quad HD', desc: '1440p High Resolution', badge: '2K' };
       case '1080p':
-        return '1080p Full HD (Recommended)';
+        return { title: '1080p Full HD', desc: 'Crisp & Fast (Recommended)', badge: '1080p' };
       case '720p':
-        return '720p HD (Fast Download)';
+        return { title: '720p Standard HD', desc: 'Quick Download Size', badge: '720p' };
       case '480p':
-        return '480p Standard Quality';
+        return { title: '480p SD', desc: 'Standard Definition', badge: '480p' };
       case '360p':
-        return '360p Data Saver';
+        return { title: '360p Mobile Saver', desc: 'Compact Mobile File', badge: '360p' };
       case 'Audio':
-        return 'MP3 Audio (320kbps High Quality)';
+        return { title: 'MP3 High Quality', desc: '320kbps Pure Audio', badge: 'MP3' };
       default:
-        return label;
+        return { title: label, desc: 'Original Stream', badge: label };
     }
   };
 
@@ -108,32 +108,32 @@ export const VideoPreviewCard: React.FC<VideoPreviewCardProps> = ({
     });
   };
 
-  // Keep only relevant distinct qualities to prevent clutter (max 5 items)
   const displayQualities = data.qualities.filter((q) => q.available);
   const currentOption = data.qualities.find((q) => q.label === selectedQuality);
 
   return (
-    <div className="w-full max-w-xl mx-auto my-6 animate-in fade-in slide-in-from-bottom-3 duration-200">
-      <Card className="overflow-hidden border border-[#E2E8F0] shadow-[0_10px_35px_rgba(0,0,0,0.06)] p-0 bg-white rounded-2xl">
+    <div className="w-full max-w-xl mx-auto my-6 px-2 sm:px-0 animate-in fade-in slide-in-from-bottom-3 duration-200">
+      <Card className="overflow-hidden border border-[#E2E8F0] shadow-[0_12px_40px_rgba(15,23,42,0.08)] p-0 bg-white rounded-2xl">
         {/* Top Header: Video Info */}
-        <div className="p-4 sm:p-5 border-b border-[#F1F5F9] relative">
+        <div className="p-4 sm:p-5 border-b border-[#F1F5F9] relative bg-gradient-to-b from-white to-[#F8FAF9]/50">
           <button
             type="button"
             onClick={onCancel}
-            className="absolute top-4 right-4 text-[#94A3B8] hover:text-[#0F172A] p-1 rounded-full hover:bg-[#F1F5F9] transition-colors"
+            className="absolute top-4 right-4 text-[#94A3B8] hover:text-[#0F172A] p-1.5 rounded-full hover:bg-slate-100 transition-colors"
             title="Close"
           >
             <X className="w-4 h-4" />
           </button>
 
-          <div className="flex items-start gap-3.5 pr-6">
-            <div className="relative w-24 h-16 sm:w-28 sm:h-18 rounded-lg overflow-hidden bg-slate-100 shrink-0 border border-[#E2E8F0]">
+          <div className="flex items-start gap-3.5 pr-8">
+            <div className="relative w-24 h-16 sm:w-28 sm:h-18 rounded-xl overflow-hidden bg-slate-100 shrink-0 border border-[#E2E8F0] shadow-xs">
               {data.thumbnailUrl ? (
                 <img
                   src={data.thumbnailUrl}
                   alt={data.title}
                   className="w-full h-full object-cover"
                   crossOrigin="anonymous"
+                  loading="lazy"
                 />
               ) : (
                 <div className="w-full h-full flex items-center justify-center text-slate-400">
@@ -141,7 +141,7 @@ export const VideoPreviewCard: React.FC<VideoPreviewCardProps> = ({
                 </div>
               )}
               {data.durationSec > 0 && (
-                <span className="absolute bottom-1 right-1 bg-black/80 text-white text-[10px] font-semibold px-1 rounded">
+                <span className="absolute bottom-1 right-1 bg-black/80 text-white text-[10px] font-bold px-1.5 py-0.5 rounded backdrop-blur-xs">
                   {formatDuration(data.durationSec)}
                 </span>
               )}
@@ -151,14 +151,14 @@ export const VideoPreviewCard: React.FC<VideoPreviewCardProps> = ({
               <h3 className="text-sm sm:text-base font-bold text-[#0F172A] leading-snug line-clamp-2">
                 {data.title}
               </h3>
-              <div className="mt-1 flex items-center gap-2 text-xs text-[#64748B]">
+              <div className="mt-1.5 flex items-center gap-2 text-xs text-[#64748B]">
                 {data.uploader && (
                   <span className="truncate max-w-[150px] font-medium text-[#475569]">
                     {data.uploader}
                   </span>
                 )}
                 {data.platform && (
-                  <span className="bg-[#F1F5F9] text-[#475569] px-2 py-0.5 rounded text-[11px] font-semibold uppercase">
+                  <span className="bg-[#F1F5F9] text-[#16A34A] border border-[#DCFCE7] px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide">
                     {data.platform}
                   </span>
                 )}
@@ -167,10 +167,15 @@ export const VideoPreviewCard: React.FC<VideoPreviewCardProps> = ({
           </div>
         </div>
 
-        {/* Proper Single-Column Quality List */}
-        <div className="p-4 sm:p-5 space-y-2">
-          <div className="text-xs font-bold uppercase tracking-wider text-[#64748B] mb-2">
-            Select Quality
+        {/* Quality Options Section */}
+        <div className="p-4 sm:p-5 space-y-2.5">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-bold uppercase tracking-wider text-[#64748B]">
+              Choose Quality & Format
+            </span>
+            <span className="text-[11px] text-[#94A3B8]">
+              {displayQualities.length} stream options
+            </span>
           </div>
 
           <div className="space-y-1.5">
@@ -178,6 +183,7 @@ export const VideoPreviewCard: React.FC<VideoPreviewCardProps> = ({
               const isSelected = selectedQuality === q.label;
               const isAudio = q.label === 'Audio';
               const size = formatBytes(q.estimatedBytes);
+              const info = getQualityDetails(q.label);
 
               return (
                 <div
@@ -200,26 +206,31 @@ export const VideoPreviewCard: React.FC<VideoPreviewCardProps> = ({
                       {isSelected && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
                     </div>
 
-                    <div className="flex items-center gap-2 truncate">
-                      {isAudio ? (
-                        <Volume2 className="w-4 h-4 text-[#16A34A] shrink-0" />
-                      ) : null}
-                      <span
-                        className={`text-xs sm:text-sm font-semibold truncate ${
-                          isSelected ? 'text-[#16A34A]' : 'text-[#0F172A]'
-                        }`}
-                      >
-                        {getQualityDisplayName(q.label)}
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        {isAudio ? (
+                          <Volume2 className="w-4 h-4 text-[#16A34A] shrink-0" />
+                        ) : null}
+                        <span
+                          className={`text-xs sm:text-sm font-bold truncate ${
+                            isSelected ? 'text-[#16A34A]' : 'text-[#0F172A]'
+                          }`}
+                        >
+                          {info.title}
+                        </span>
+                      </div>
+                      <span className="text-[11px] text-[#64748B] block truncate">
+                        {info.desc}
                       </span>
                     </div>
                   </div>
 
                   <div className="flex items-center gap-2 shrink-0 text-xs">
                     {size && (
-                      <span className="text-[#64748B] font-medium">{size}</span>
+                      <span className="text-[#64748B] font-medium hidden xs:inline">{size}</span>
                     )}
                     <span
-                      className={`px-2 py-0.5 rounded text-[11px] font-bold ${
+                      className={`px-2 py-0.5 rounded-md text-[11px] font-bold ${
                         isSelected
                           ? 'bg-[#DCFCE7] text-[#16A34A]'
                           : 'bg-[#F1F5F9] text-[#64748B]'
@@ -233,7 +244,7 @@ export const VideoPreviewCard: React.FC<VideoPreviewCardProps> = ({
             })}
           </div>
 
-          {/* Optional Collapsible More Options (Format / Subtitles) */}
+          {/* More options accordion */}
           <div className="pt-2">
             <button
               type="button"
@@ -243,7 +254,7 @@ export const VideoPreviewCard: React.FC<VideoPreviewCardProps> = ({
               {showAdvanced ? (
                 <>
                   <ChevronUp className="w-3.5 h-3.5" />
-                  <span>Hide format options</span>
+                  <span>Hide advanced options</span>
                 </>
               ) : (
                 <>
@@ -254,15 +265,15 @@ export const VideoPreviewCard: React.FC<VideoPreviewCardProps> = ({
             </button>
 
             {showAdvanced && (
-              <div className="mt-3 p-3 bg-[#F8FAF9] rounded-xl border border-[#E2E8F0] space-y-3 animate-in fade-in">
+              <div className="mt-3 p-3.5 bg-[#F8FAF9] rounded-xl border border-[#E2E8F0] space-y-3 animate-in fade-in">
                 <div>
                   <label className="text-[11px] font-semibold text-[#64748B] block mb-1">
-                    File Format
+                    Container Format
                   </label>
                   <select
                     value={selectedFormat}
                     onChange={(e) => setSelectedFormat(e.target.value as VideoFormat)}
-                    className="w-full bg-white border border-[#E2E8F0] text-[#0F172A] text-xs font-medium rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-[#16A34A]"
+                    className="w-full bg-white border border-[#E2E8F0] text-[#0F172A] text-xs font-medium rounded-lg px-2.5 py-2 focus:outline-none focus:border-[#16A34A]"
                   >
                     {selectedQuality === 'Audio' ? (
                       <>
@@ -283,14 +294,14 @@ export const VideoPreviewCard: React.FC<VideoPreviewCardProps> = ({
                 {data.subtitles && data.subtitles.length > 0 && (
                   <div>
                     <label className="text-[11px] font-semibold text-[#64748B] block mb-1">
-                      Subtitles
+                      Subtitles / Closed Captions
                     </label>
                     <select
                       value={selectedSubtitle}
                       onChange={(e) => setSelectedSubtitle(e.target.value)}
-                      className="w-full bg-white border border-[#E2E8F0] text-[#0F172A] text-xs font-medium rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-[#16A34A]"
+                      className="w-full bg-white border border-[#E2E8F0] text-[#0F172A] text-xs font-medium rounded-lg px-2.5 py-2 focus:outline-none focus:border-[#16A34A]"
                     >
-                      <option value="">No Subtitles</option>
+                      <option value="">None (Video Only)</option>
                       {data.subtitles.map((sub, idx) => (
                         <option key={idx} value={sub.code}>
                           {sub.language} {sub.isAutoGenerated ? '(Auto)' : ''}
@@ -303,30 +314,28 @@ export const VideoPreviewCard: React.FC<VideoPreviewCardProps> = ({
             )}
           </div>
 
-          {/* Prominent Single Column Action Button */}
+          {/* Download Action CTA */}
           <div className="pt-3">
             <Button
               type="button"
               variant="primary"
               onClick={handleDownloadClick}
               disabled={isLoading}
-              className="w-full py-3.5 rounded-xl font-bold text-sm bg-[#16A34A] hover:bg-[#15803D] text-white shadow-[0_4px_16px_rgba(22,163,74,0.25)] flex items-center justify-center gap-2"
+              className="w-full py-4 rounded-xl font-bold text-sm bg-[#16A34A] hover:bg-[#15803D] active:scale-[0.99] text-white shadow-md shadow-[#16A34A]/25 flex items-center justify-center gap-2 transition-transform"
             >
               {isLoading ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  <span>Starting Download...</span>
+                  <span>Preparing Download Engine...</span>
                 </>
               ) : (
                 <>
                   <Download className="w-4 h-4" />
                   <span>
-                    Download {selectedQuality === 'Audio' ? 'Audio' : selectedQuality} (
-                    {selectedFormat.toUpperCase()}
+                    Download {selectedQuality === 'Audio' ? 'Audio (MP3)' : `${selectedQuality} ${selectedFormat.toUpperCase()}`}
                     {currentOption?.estimatedBytes
                       ? ` • ${formatBytes(currentOption.estimatedBytes)}`
                       : ''}
-                    )
                   </span>
                 </>
               )}

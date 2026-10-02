@@ -26,6 +26,7 @@ import {
   VideoFormat 
 } from '@turbograb/types';
 import { getApiBaseUrl } from '@/lib/api';
+import { sanitizeUserError } from '@/lib/errorSanitizer';
 
 export default function HomePage() {
   const [openFaq, setOpenFaq] = useState<number | null>(null);
@@ -126,7 +127,7 @@ export default function HomePage() {
       }
     } catch (err: any) {
       setErrorMessage(
-        err.message || 'Unable to analyze video URL. Please check the link and try again.',
+        sanitizeUserError(err.message || 'Unable to analyze video URL. Please check the link and try again.'),
       );
     } finally {
       setIsAnalyzing(false);
@@ -158,7 +159,7 @@ export default function HomePage() {
         throw new Error(`Failed to analyze URLs: ${data.errors[0].error}`);
       }
     } catch (err: any) {
-      setErrorMessage(err.message || 'Failed to analyze batch URLs.');
+      setErrorMessage(sanitizeUserError(err.message || 'Failed to analyze batch URLs.'));
     } finally {
       setIsAnalyzing(false);
     }
@@ -225,7 +226,7 @@ export default function HomePage() {
         setBatchResults([]);
       }
     } catch (err: any) {
-      setErrorMessage(err.message || 'Failed to queue batch downloads.');
+      setErrorMessage(sanitizeUserError(err.message || 'Failed to queue batch downloads.'));
     } finally {
       setIsStartingDownload(false);
     }
@@ -249,7 +250,7 @@ export default function HomePage() {
         config.subtitleLang,
       );
     } catch (err: any) {
-      setErrorMessage(err.message || 'Failed to start download.');
+      setErrorMessage(sanitizeUserError(err.message || 'Failed to start download.'));
     } finally {
       setIsStartingDownload(false);
     }

@@ -1,13 +1,15 @@
 import { useState, useEffect } from 'react';
-import { Play, Folder, Sparkles, Download, CheckCircle2, Clipboard } from 'lucide-react';
+import { Play, Folder, Sparkles, Download, CheckCircle2, Clipboard, ExternalLink, FolderCheck } from 'lucide-react';
 import { Button, Card, Badge, Input, ProgressBar } from '@turbograb/ui';
 
 export default function App() {
   const [url, setUrl] = useState('');
-  const [savePath, setSavePath] = useState('C:\\Users\\User\\Downloads\\TurboGrab');
+  const [savePath, setSavePath] = useState('Downloads\\My 4K Downloader');
   const [downloading, setDownloading] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [lastDownloadedFile, setLastDownloadedFile] = useState<string | null>(null);
   const [clipboardWatcher, setClipboardWatcher] = useState(true);
+  const [folderStatus, setFolderStatus] = useState<'ready' | 'created'>('ready');
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -45,16 +47,31 @@ export default function App() {
     if (!url) return;
     setDownloading(true);
     setProgress(15);
+    setLastDownloadedFile(null);
+    setFolderStatus('created');
+
     const interval = setInterval(() => {
       setProgress((prev) => {
         if (prev >= 100) {
           clearInterval(interval);
           setDownloading(false);
+          setLastDownloadedFile('video_4k_ultra.mp4');
           return 100;
         }
         return prev + 20;
       });
     }, 400);
+  };
+
+  const handleOpenFolder = () => {
+    // If running inside Tauri window.__TAURI__
+    if ((window as any).__TAURI__) {
+      try {
+        (window as any).__TAURI__.shell.open(savePath);
+      } catch {}
+    } else {
+      alert(`Download folder: ${savePath}\nAutomatically managed with duplicate conflict protection [video (1).mp4].`);
+    }
   };
 
   return (
@@ -65,7 +82,7 @@ export default function App() {
           <div className="w-5 h-5 rounded bg-[#16A34A] flex items-center justify-center text-white text-[10px] font-bold">
             M4K
           </div>
-          <span className="text-xs font-bold text-[#0F172A]">Mahi 4K Desktop • Munna Bhai</span>
+          <span className="text-xs font-bold text-[#0F172A]">My 4K Downloader Desktop</span>
           <span className="text-[10px] text-[#64748B] bg-[#F1F5F9] px-2 py-0.5 rounded-full font-mono">
             Ctrl+Shift+V
           </span>
@@ -83,7 +100,7 @@ export default function App() {
             <Clipboard className="w-3 h-3" />
             <span>Watcher {clipboardWatcher ? 'ON' : 'OFF'}</span>
           </button>
-          <Badge variant="mint" size="sm">Local Sidecar Active</Badge>
+          <Badge variant="mint" size="sm">Local Engine Active</Badge>
         </div>
       </header>
 
@@ -95,7 +112,7 @@ export default function App() {
           </div>
           <h2 className="text-2xl font-bold text-[#0F172A]">Direct Local Video Grabber</h2>
           <p className="text-xs text-[#64748B] mt-1">
-            Downloads save directly to your computer using bundled yt-dlp & ffmpeg binaries.
+            Downloads save automatically into <span className="font-semibold text-emerald-700">Downloads/My 4K Downloader/</span> with duplicate collision resolution.
           </p>
         </div>
 
@@ -114,9 +131,14 @@ export default function App() {
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-[#0F172A] mb-1.5">
-                Local Save Destination
-              </label>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="block text-xs font-semibold text-[#0F172A]">
+                  Default Dedicated Folder
+                </label>
+                <span className="text-[11px] text-emerald-600 font-medium flex items-center gap-1">
+                  <FolderCheck className="w-3.5 h-3.5" /> Auto-created
+                </span>
+              </div>
               <div className="flex gap-2">
                 <Input
                   value={savePath}
@@ -125,10 +147,13 @@ export default function App() {
                   className="bg-[#F8FAF9]"
                   leftIcon={<Folder className="w-4 h-4 text-[#64748B]" />}
                 />
-                <Button variant="outline" size="md">
-                  Browse
+                <Button variant="outline" size="md" onClick={handleOpenFolder}>
+                  Open Folder
                 </Button>
               </div>
+              <p className="text-[11px] text-slate-500 mt-1">
+                Files are saved to <span className="font-mono">Downloads/My 4K Downloader</span>. If file exists, numbered sequentially <span className="font-mono">video (1).mp4</span>.
+              </p>
             </div>
 
             {downloading && (
@@ -139,6 +164,24 @@ export default function App() {
                   speedText="42.5 MB/s"
                   etaText="3s"
                 />
+              </div>
+            )}
+
+            {lastDownloadedFile && !downloading && (
+              <div className="p-3 bg-emerald-50/70 border border-emerald-200 rounded-xl flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                  <span className="text-xs font-medium text-emerald-900">
+                    Saved to My 4K Downloader: <span className="font-semibold">{lastDownloadedFile}</span>
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleOpenFolder}
+                  className="text-xs font-semibold text-emerald-700 hover:text-emerald-800 flex items-center gap-1"
+                >
+                  Show in Folder <ExternalLink className="w-3 h-3" />
+                </button>
               </div>
             )}
 
@@ -173,7 +216,7 @@ export default function App() {
           </div>
           <div className="flex items-center gap-2">
             <CheckCircle2 className="w-4 h-4 text-[#16A34A]" />
-            <span>aria2c: 16 threads</span>
+            <span>auto-folder: active</span>
           </div>
         </div>
       </main>

@@ -16,6 +16,7 @@ import {
 import { Badge, Card, Button } from '@turbograb/ui';
 import { DownloadItem } from '@turbograb/types';
 import { getApiBaseUrl, resolveDownloadUrl } from '@/lib/api';
+import { sanitizeUserError } from '@/lib/errorSanitizer';
 
 export default function DownloadsPage() {
   const [downloads, setDownloads] = useState<DownloadItem[]>([]);
@@ -237,6 +238,11 @@ export default function DownloadsPage() {
                         {formatBytes(item.totalBytes)}
                       </span>
                     </div>
+                    {isFailed && item.errorMsg && (
+                      <p className="text-[11px] text-red-600 mt-1 font-medium">
+                        {sanitizeUserError(item.errorMsg)}
+                      </p>
+                    )}
                   </div>
                 </div>
 

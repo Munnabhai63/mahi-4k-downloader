@@ -5,10 +5,16 @@ document.addEventListener('DOMContentLoaded', () => {
   const resultCard = document.getElementById('result-card');
   const resultTitle = document.getElementById('result-title');
   const resultMeta = document.getElementById('result-meta');
+  const btnDownload = document.getElementById('btn-download');
 
-  // Detect current tab URL
+  const API_BASE = 'https://api4k.mahiskills.in/api/v1';
+  const WEB_APP = 'https://mahi-4k-downloader.pages.dev';
+
+  let currentAnalysis = null;
+
+  // Detect current active tab URL
   btnDetectTab.addEventListener('click', () => {
-    if (typeof chrome !== 'undefined' && chrome.tabs) {
+    if (typeof chrome !== 'undefined' && chrome.tabs && chrome.tabs.query) {
       chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
         if (tabs && tabs[0] && tabs[0].url) {
           inputUrl.value = tabs[0].url;
@@ -16,7 +22,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       });
     } else {
-      inputUrl.value = 'https://www.youtube.com/watch?v=demo';
+      inputUrl.value = 'https://www.youtube.com/watch?v=aqz-KE-bpKQ';
       triggerAnalysis(inputUrl.value);
     }
   });
@@ -28,46 +34,78 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  const btnDownload = document.getElementById('btn-download');
-
   btnDownload.addEventListener('click', async () => {
     const url = inputUrl.value.trim();
     if (!url) return;
 
     btnDownload.disabled = true;
-    btnDownload.textContent = 'Queueing Download...';
+    btnDownload.textContent = 'Starting Download...';
+
+    const quality = currentAnalysis?.topQuality || '1080p';
+    const filename = `${(currentAnalysis?.title || 'video').slice(0, 50)}.mp4`;
 
     try {
-      const res = await fetch('http://localhost:4000/api/v1/downloads', {
+      const res = await fetch(`${API_BASE}/downloads`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url, quality: '1080p', format: 'mp4' }),
+        body: JSON.stringify({ url, quality, format: 'mp4' }),
       });
 
       if (res.ok) {
-        btnDownload.textContent = 'Queued! Opening TurboGrab...';
+        const item = await res.json();
+        btnDownload.textContent = 'Queued! Saving to My 4K Downloader...';
+
+        // Check if signedUrl or poll status
+        if (item.signedUrl) {
+          triggerExtensionDownload(item.signedUrl, filename);
+        } else {
+          // Open web app to track live progress and save to folder
+          setTimeout(() => {
+            openWebDownloader(url);
+          }, 600);
+        }
+      } else {
+        openWebDownloader(url);
       }
     } catch {
       // Fallback to web interface
+      openWebDownloader(url);
     }
 
     setTimeout(() => {
-      if (typeof chrome !== 'undefined' && chrome.tabs) {
-        chrome.tabs.create({ url: `http://localhost:3000/?url=${encodeURIComponent(url)}` });
-      } else {
-        window.open(`http://localhost:3000/?url=${encodeURIComponent(url)}`, '_blank');
-      }
       btnDownload.disabled = false;
-      btnDownload.textContent = 'Download 1080p';
-    }, 500);
+      btnDownload.textContent = `Download ${quality}`;
+    }, 2000);
   });
+
+  function triggerExtensionDownload(downloadUrl, filename) {
+    if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.sendMessage) {
+      chrome.runtime.sendMessage(
+        { action: 'download_file', url: downloadUrl, filename },
+        (response) => {
+          if (response && response.success) {
+            btnDownload.textContent = 'Saved to My 4K Downloader!';
+          }
+        },
+      );
+    }
+  }
+
+  function openWebDownloader(url) {
+    const target = `${WEB_APP}/?url=${encodeURIComponent(url)}`;
+    if (typeof chrome !== 'undefined' && chrome.tabs && chrome.tabs.create) {
+      chrome.tabs.create({ url: target });
+    } else {
+      window.open(target, '_blank');
+    }
+  }
 
   function triggerAnalysis(url) {
     resultCard.classList.remove('hidden');
-    resultTitle.textContent = 'Detecting video streams...';
-    resultMeta.textContent = 'Target: ' + url.slice(0, 45) + '...';
+    resultTitle.textContent = 'Analyzing media stream...';
+    resultMeta.textContent = 'Connecting to api4k.mahiskills.in...';
 
-    fetch('http://localhost:4000/api/v1/analyze', {
+    fetch(`${API_BASE}/analyze`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ url }),
@@ -75,15 +113,19 @@ document.addEventListener('DOMContentLoaded', () => {
       .then((r) => r.json())
       .then((data) => {
         if (data.title) {
-          resultTitle.textContent = data.title.slice(0, 40) + '...';
           const topQuality = data.qualities?.find((q) => q.available)?.label || '1080p';
-          resultMeta.textContent = `${data.platform} • ${topQuality} • ~${Math.round(data.durationSec || 60)}s`;
-          btnDownload.textContent = `Download ${topQuality}`;
+          currentAnalysis = { title: data.title, topQuality, data };
+          resultTitle.textContent = data.title.slice(0, 45) + (data.title.length > 45 ? '...' : '');
+          resultMeta.textContent = `${data.platform || 'Video'} • ${topQuality} • ~${Math.round(data.durationSec || 60)}s`;
+          btnDownload.textContent = `Download ${topQuality} MP4`;
+        } else {
+          resultTitle.textContent = 'Media Ready for Download';
+          resultMeta.textContent = 'Quality: 1080p / Best MP4';
         }
       })
       .catch(() => {
-        resultTitle.textContent = 'Ready for Download (1080p MP4)';
-        resultMeta.textContent = 'Quality: 1080p • Audio: AAC 320k';
+        resultTitle.textContent = 'Ready for Fast Download';
+        resultMeta.textContent = 'Click below to download via My 4K Downloader';
       });
   }
 });

@@ -6,12 +6,14 @@ import {
   Body,
   Param,
   Query,
+  Req,
   Res,
   HttpCode,
   HttpStatus,
   BadRequestException,
+  NotFoundException,
 } from '@nestjs/common';
-import { Response } from 'express';
+import { Request, Response } from 'express';
 import { ApiTags, ApiOperation, ApiResponse, ApiProperty, ApiQuery } from '@nestjs/swagger';
 import { DownloadsService } from './downloads.service';
 import { CreateDownloadRequest, DownloadItem, VideoFormat, VideoQualityLabel } from '@turbograb/types';
@@ -76,25 +78,82 @@ export class DownloadsController {
   }
 
   @Get(':id/stream')
-  @ApiOperation({ summary: 'Stream completed file using time-limited HMAC signed URL' })
+  @ApiOperation({ summary: 'Stream completed file using time-limited HMAC signed URL with Range/206 support' })
   streamFile(
     @Param('id') id: string,
     @Query('sig') sig: string,
     @Query('exp') exp: string,
     @Query('fn') fn: string,
+    @Req() req: Request,
     @Res() res: Response,
-  ) {
+  ): void {
     if (!sig || !exp || !fn) {
       throw new BadRequestException('Missing signed URL parameters.');
     }
 
     const { filePath, filename } = this.downloadsService.getFilePathForStream(id, sig, exp, fn);
 
-    res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(filename)}"`);
-    res.setHeader('Content-Type', 'application/octet-stream');
+    if (!fs.existsSync(filePath)) {
+      throw new NotFoundException('Download file not found or has been cleaned up.');
+    }
 
-    const fileStream = fs.createReadStream(filePath);
-    fileStream.pipe(res);
+    const stat = fs.statSync(filePath);
+    const fileSize = stat.size;
+
+    // Detect accurate MIME type based on file extension
+    const ext = (filename.split('.').pop() || '').toLowerCase();
+    const mimeTypes: Record<string, string> = {
+      mp4: 'video/mp4',
+      webm: 'video/webm',
+      mkv: 'video/x-matroska',
+      avi: 'video/x-msvideo',
+      mov: 'video/quicktime',
+      mp3: 'audio/mpeg',
+      m4a: 'audio/mp4',
+      aac: 'audio/aac',
+      flac: 'audio/flac',
+      wav: 'audio/wav',
+      opus: 'audio/opus',
+      ogg: 'audio/ogg',
+    };
+    const contentType = mimeTypes[ext] || 'application/octet-stream';
+
+    const range = req.headers.range;
+
+    if (range) {
+      const parts = range.replace(/bytes=/, '').split('-');
+      const start = parseInt(parts[0], 10);
+      const end = parts[1] ? parseInt(parts[1], 10) : fileSize - 1;
+
+      if (isNaN(start) || start >= fileSize || end >= fileSize || start > end) {
+        res.setHeader('Content-Range', `bytes */${fileSize}`);
+        res.status(HttpStatus.REQUESTED_RANGE_NOT_SATISFIABLE).end();
+        return;
+      }
+
+      const chunkSize = end - start + 1;
+      const fileStream = fs.createReadStream(filePath, { start, end });
+
+      res.writeHead(HttpStatus.PARTIAL_CONTENT, {
+        'Content-Range': `bytes ${start}-${end}/${fileSize}`,
+        'Accept-Ranges': 'bytes',
+        'Content-Length': chunkSize,
+        'Content-Type': contentType,
+        'Content-Disposition': `attachment; filename="${encodeURIComponent(filename)}"`,
+      });
+
+      fileStream.pipe(res);
+    } else {
+      res.writeHead(HttpStatus.OK, {
+        'Content-Length': fileSize,
+        'Accept-Ranges': 'bytes',
+        'Content-Type': contentType,
+        'Content-Disposition': `attachment; filename="${encodeURIComponent(filename)}"`,
+      });
+
+      const fileStream = fs.createReadStream(filePath);
+      fileStream.pipe(res);
+    }
   }
 
   @Post(':id/cancel')

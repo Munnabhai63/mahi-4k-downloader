@@ -12,16 +12,26 @@ import {
   Trash2,
   HelpCircle,
   Save,
+  Folder,
+  FolderCheck,
 } from 'lucide-react';
 import { Button, Card, Badge } from '@turbograb/ui';
 import { VideoFormat, VideoQualityLabel } from '@turbograb/types';
 import { getApiBaseUrl } from '@/lib/api';
+import {
+  isFileSystemAccessSupported,
+  getActiveDownloadDirectoryName,
+  promptChooseDownloadDirectory,
+  resetDownloadDirectory,
+} from '@/lib/downloadFolder';
 
 export default function SettingsPage() {
   const [smartModeEnabled, setSmartModeEnabled] = useState(false);
   const [defaultQuality, setDefaultQuality] = useState<VideoQualityLabel>('1080p');
   const [defaultFormat, setDefaultFormat] = useState<VideoFormat>('mp4');
   const [defaultSubtitleLang, setDefaultSubtitleLang] = useState('en');
+  const [customFolder, setCustomFolder] = useState<string | null>(null);
+  const [isFsaAvailable, setIsFsaAvailable] = useState<boolean>(false);
 
   // Cookies Vault state
   const [cookiesStatus, setCookiesStatus] = useState<Record<string, boolean>>({
@@ -50,9 +60,33 @@ export default function SettingsPage() {
       } catch {}
     }
 
+    // Check File System Access and active folder
+    setIsFsaAvailable(isFileSystemAccessSupported());
+    getActiveDownloadDirectoryName().then((name) => {
+      setCustomFolder(name);
+    });
+
     // Load cookies status from API
     fetchCookiesStatus();
   }, []);
+
+  const handlePickFolder = async () => {
+    const res = await promptChooseDownloadDirectory();
+    if (res.success && res.folderName) {
+      setCustomFolder(res.folderName);
+      setSaveSuccessMsg(`Dedicated download folder configured: ${res.folderName}`);
+      setTimeout(() => setSaveSuccessMsg(''), 3500);
+    } else if (res.error && res.error !== 'Folder selection was cancelled.') {
+      alert(res.error);
+    }
+  };
+
+  const handleResetFolder = async () => {
+    await resetDownloadDirectory();
+    setCustomFolder(null);
+    setSaveSuccessMsg('Reset download destination to standard system Downloads folder.');
+    setTimeout(() => setSaveSuccessMsg(''), 3500);
+  };
 
   const fetchCookiesStatus = async () => {
     try {
@@ -239,6 +273,90 @@ export default function SettingsPage() {
               <Save className="w-4 h-4" />
               <span>Save Defaults</span>
             </Button>
+          </div>
+        </Card>
+
+        {/* Download Folder / Storage Section */}
+        <Card className="p-6 bg-white border-[#E2E8F0] shadow-xs">
+          <div className="mb-4">
+            <div className="flex items-center gap-2">
+              <Folder className="w-5 h-5 text-[#16A34A]" />
+              <h2 className="text-lg font-bold text-[#0F172A] font-poppins">
+                Download Destination Folder
+              </h2>
+            </div>
+            <p className="text-xs text-[#64748B] mt-1">
+              Configure where completed video and audio files are stored on your device.
+            </p>
+          </div>
+
+          <div className="p-4 bg-[#F8FAF9] rounded-xl border border-[#E2E8F0] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-white border border-[#E2E8F0] flex items-center justify-center shrink-0">
+                {customFolder ? (
+                  <FolderCheck className="w-5 h-5 text-[#16A34A]" />
+                ) : (
+                  <Folder className="w-5 h-5 text-[#94A3B8]" />
+                )}
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-bold text-[#0F172A]">
+                    {customFolder ? customFolder : 'Downloads (Default System Folder)'}
+                  </span>
+                  <Badge variant={customFolder ? 'mint' : 'neutral'} size="sm">
+                    {customFolder ? 'Custom Directory' : 'Standard Browser'}
+                  </Badge>
+                </div>
+                <p className="text-xs text-[#64748B] mt-0.5">
+                  {customFolder
+                    ? 'Files stream directly into this authorized folder with duplicate renaming.'
+                    : isFsaAvailable
+                    ? 'Select or create "Downloads/My 4K Downloader" to save files directly into a dedicated folder.'
+                    : 'Your browser saves downloads automatically into your default Downloads folder.'}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 w-full sm:w-auto shrink-0">
+              {isFsaAvailable && (
+                <Button
+                  variant="primary"
+                  size="sm"
+                  onClick={handlePickFolder}
+                  className="w-full sm:w-auto text-xs bg-[#16A34A] hover:bg-[#15803D] text-white"
+                >
+                  {customFolder ? 'Change Folder' : 'Choose Dedicated Folder'}
+                </Button>
+              )}
+              {customFolder && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleResetFolder}
+                  className="text-xs"
+                  title="Reset to browser default"
+                >
+                  Reset
+                </Button>
+              )}
+            </div>
+          </div>
+
+          {/* Platform Guide */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-4 pt-3 border-t border-[#F1F5F9] text-xs text-[#64748B]">
+            <div className="p-3 bg-white rounded-lg border border-[#F1F5F9]">
+              <span className="font-bold text-[#0F172A] block mb-0.5">Desktop / Tauri App</span>
+              <span>Automatically saves into <code className="bg-slate-100 px-1 py-0.5 rounded text-[11px]">Downloads/My 4K Downloader</code> with duplicate protection.</span>
+            </div>
+            <div className="p-3 bg-white rounded-lg border border-[#F1F5F9]">
+              <span className="font-bold text-[#0F172A] block mb-0.5">Chrome / Edge Extension</span>
+              <span>Uses browser downloads API targeting <code className="bg-slate-100 px-1 py-0.5 rounded text-[11px]">My 4K Downloader/</code> folder directly.</span>
+            </div>
+            <div className="p-3 bg-white rounded-lg border border-[#F1F5F9]">
+              <span className="font-bold text-[#0F172A] block mb-0.5">Mobile / Web / PWA</span>
+              <span>Chromium uses File System Access handle; Safari/iOS uses native save sheet.</span>
+            </div>
           </div>
         </Card>
 
