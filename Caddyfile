@@ -1,0 +1,36 @@
+{
+  # Global options
+  admin off
+  auto_https disable_redirects
+}
+
+:80, :443 {
+  encode zstd gzip
+
+  # Security headers
+  header {
+    X-Content-Type-Options nosniff
+    X-Frame-Options SAMEORIGIN
+    Referrer-Policy strict-origin-when-cross-origin
+    Permissions-Policy "camera=(), microphone=(), geolocation=()"
+  }
+
+  # Admin Panel routes
+  handle /admin* {
+    reverse_proxy admin:3001
+  }
+
+  # API & WebSocket Gateway routes
+  handle /api/* {
+    reverse_proxy api:4000
+  }
+
+  handle /socket.io/* {
+    reverse_proxy api:4000
+  }
+
+  # Web App Frontend
+  handle /* {
+    reverse_proxy web:3000
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "name": "turbograb-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Ultra-Fast Universal Video Downloader - Web App + Chrome Extension + Desktop App + Admin Panel",
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "lint": "turbo run lint",
+    "typecheck": "turbo run typecheck",
+    "test": "turbo run test",
+    "clean": "turbo run clean"
+  },
+  "devDependencies": {
+    "prettier": "^3.5.3",
+    "turbo": "^2.4.4",
+    "typescript": "^5.7.3"
+  },
+  "packageManager": "pnpm@12.4.1"
+}

@@ -15,3 +15,7 @@
 ## ADR 004: Local Development & Host Environment Adaptation
 - **Decision**: Docker is not currently installed or running on this Windows host machine. Full production Dockerfiles and `docker-compose.yml` are authored and validated for VPS deployment. For local development and verification, services run directly on the Node 24 + Python 3.14 runtime with embedded/mock-supported in-memory/SQLite/local adapters when external daemon services (Postgres/Redis) are running standalone or embedded.
 - **Rationale**: Ensures 100% testability, typechecking, buildability, and UI visual verification directly on the machine without blocking on host Docker daemon installation.
+
+## ADR 005: SSRF Protection, DRM Platform Blocker & Ephemeral Signed URLs
+- **Decision**: Validate all incoming URLs before passing to worker processes. Enforce strict rejection of private IP ranges (10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16, 127.0.0.0/8, 169.254.169.254, loopback) and permanently block DRM platforms (Netflix, Prime, Disney+, Hotstar, Spotify, Apple TV, etc.) with standardized compliant user messages. Serve converted media files through HMAC-SHA256 signed URLs expiring in 10 minutes with automated 6-hour TTL disk cleanup.
+- **Rationale**: Enforces non-negotiable security and legal compliance requirements defined in §3, §6.2, §17, and §18 of `MASTER_PROMPT.md`.

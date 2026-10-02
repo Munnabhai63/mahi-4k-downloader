@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mahi 4K Downloader by Munna Bhai (Turbo)</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="popup-container">
+    <!-- Header -->
+    <header class="popup-header">
+      <div class="brand">
+        <div class="brand-badge">M4K</div>
+        <span class="brand-title">Mahi <strong>4K</strong> (by Munna Bhai)</span>
+      </div>
+      <span class="status-pill">Ready</span>
+    </header>
+
+    <!-- Main Content -->
+    <main class="popup-main">
+      <!-- Current Tab Action -->
+      <button id="btn-detect-tab" class="btn-current-tab">
+        <span class="icon">⚡</span>
+        <span>Download Current Tab</span>
+      </button>
+
+      <div class="divider">
+        <span>or paste URL</span>
+      </div>
+
+      <!-- Paste input -->
+      <div class="input-group">
+        <input type="url" id="input-url" placeholder="Paste video link here..." />
+        <button id="btn-analyze" class="btn-analyze">Analyze</button>
+      </div>
+
+      <!-- Result Card (hidden by default) -->
+      <div id="result-card" class="result-card hidden">
+        <div class="result-info">
+          <div id="result-title" class="result-title">Analyzing video...</div>
+          <div id="result-meta" class="result-meta">Loading formats</div>
+        </div>
+        <button id="btn-download" class="btn-download">Download 1080p</button>
+      </div>
+    </main>
+
+    <!-- Footer Notice -->
+    <footer class="popup-footer">
+      <span>Mahi 4K Downloader • Created by Munna Bhai</span>
+    </footer>
+  </div>
+  <script src="popup.js"></script>
+</body>
+</html>
