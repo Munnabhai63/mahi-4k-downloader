@@ -1,0 +1,140 @@
+# ==============================================================================
+# ISOLATED DOCKER COMPOSE CONFIGURATION FOR VPS DEPLOYMENT
+# Project: Mahi 4K Downloader (Isolated Backend Stack)
+#
+# GUARANTEES FOR EXISTING PRODUCTION SERVICES:
+# 1. Custom, isolated network ('mahi_backend_net') - No conflict with existing networks.
+# 2. Strict loopback binding for API (127.0.0.1:${MAHI_API_PORT:-4080}:4000) - No port 80/443 takeover.
+# 3. ZERO host exposure for Postgres & Redis - Internal network only, no port conflicts.
+# 4. Prefixed unique container names ('mahi_*_prod') - Zero container name collision.
+# 5. Prefixed unique volume names ('mahi_*_data') - Zero volume overwrite risk.
+# 6. Hard CPU & RAM limits on every service - Cannot starve existing VPS production apps.
+# ==============================================================================
+
+name: mahi_downloader_stack
+
+networks:
+  mahi_backend_net:
+    driver: bridge
+    labels:
+      com.mahi.description: "Isolated network for Mahi 4K Downloader"
+
+volumes:
+  mahi_postgres_data:
+    name: mahi_postgres_data
+  mahi_redis_data:
+    name: mahi_redis_data
+  mahi_temp_storage:
+    name: mahi_temp_storage
+
+services:
+  mahi_postgres:
+    image: postgres:16-alpine
+    container_name: mahi_postgres_prod
+    restart: unless-stopped
+    networks:
+      - mahi_backend_net
+    environment:
+      POSTGRES_USER: ${MAHI_DB_USER:-mahi_user}
+      POSTGRES_PASSWORD: ${MAHI_DB_PASSWORD:-mahi_secure_password_replace_in_env}
+      POSTGRES_DB: ${MAHI_DB_NAME:-mahi_downloader}
+    volumes:
+      - mahi_postgres_data:/var/lib/postgresql/data
+    deploy:
+      resources:
+        limits:
+          cpus: '0.50'
+          memory: 512M
+        reservations:
+          cpus: '0.10'
+          memory: 128M
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${MAHI_DB_USER:-mahi_user}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  mahi_redis:
+    image: redis:7-alpine
+    container_name: mahi_redis_prod
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes", "--maxmemory", "200mb", "--maxmemory-policy", "allkeys-lru"]
+    networks:
+      - mahi_backend_net
+    volumes:
+      - mahi_redis_data:/data
+    deploy:
+      resources:
+        limits:
+          cpus: '0.25'
+          memory: 256M
+        reservations:
+          cpus: '0.05'
+          memory: 64M
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  mahi_worker:
+    build:
+      context: .
+      dockerfile: services/worker/Dockerfile
+    container_name: mahi_worker_prod
+    restart: unless-stopped
+    networks:
+      - mahi_backend_net
+    environment:
+      - REDIS_URL=redis://mahi_redis:6379
+      - TEMP_STORAGE_PATH=/tmp/turbograb
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - mahi_temp_storage:/tmp/turbograb
+    deploy:
+      resources:
+        limits:
+          cpus: '1.00'
+          memory: 1024M
+        reservations:
+          cpus: '0.20'
+          memory: 256M
+    depends_on:
+      mahi_redis:
+        condition: service_healthy
+
+  mahi_api:
+    build:
+      context: .
+      dockerfile: services/api/Dockerfile
+    container_name: mahi_api_prod
+    restart: unless-stopped
+    networks:
+      - mahi_backend_net
+    environment:
+      - NODE_ENV=production
+      - PORT=4000
+      - DATABASE_URL=postgresql://${MAHI_DB_USER:-mahi_user}:${MAHI_DB_PASSWORD:-mahi_secure_password_replace_in_env}@mahi_postgres:5432/${MAHI_DB_NAME:-mahi_downloader}?schema=public
+      - REDIS_URL=redis://mahi_redis:6379
+      - TEMP_STORAGE_PATH=/tmp/turbograb
+      - CORS_ORIGIN=${MAHI_FRONTEND_ORIGIN:-*}
+      - JWT_SECRET=${MAHI_JWT_SECRET:-generate_secure_random_key}
+    ports:
+      # Strictly bind to 127.0.0.1 (loopback) to prevent accidental public exposure.
+      # Reverse proxy (Caddy/Nginx) forwards requests from domain to this port.
+      - "127.0.0.1:${MAHI_API_PORT:-4080}:4000"
+    volumes:
+      - mahi_temp_storage:/tmp/turbograb
+    deploy:
+      resources:
+        limits:
+          cpus: '0.75'
+          memory: 512M
+        reservations:
+          cpus: '0.15'
+          memory: 128M
+    depends_on:
+      mahi_postgres:
+        condition: service_healthy
+      mahi_redis:
+        condition: service_healthy
