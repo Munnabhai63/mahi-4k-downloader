@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { ArrowLeft, CheckCircle2, AlertTriangle, Send, Loader2 } from 'lucide-react';
 import { Badge, Card, Button } from '@turbograb/ui';
+import { getApiBaseUrl } from '@/lib/api';
 
 export default function DmcaPage() {
   const [reporterEmail, setReporterEmail] = useState('');
@@ -27,7 +28,7 @@ export default function DmcaPage() {
     setErrorMessage('');
 
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api/v1';
+      const apiUrl = getApiBaseUrl();
       const res = await fetch(`${apiUrl}/dmca`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

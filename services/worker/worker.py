@@ -78,10 +78,10 @@ def analyze_url(url: str, cookie_file: Optional[str] = None) -> Dict[str, Any]:
         "no_warnings": True,
         "skip_download": True,
         "extract_flat": False,
-        "http_headers": {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
-        },
         "extractor_args": {
+            "youtube": {
+                "player_client": ["android", "web"]
+            },
             "tiktok": {"api_hostname": ["api22-core-c-useast1a.tiktokv.com"]}
         }
     }
@@ -314,9 +314,6 @@ def download_video(spec: Dict[str, Any]):
         "quiet": True,
         "no_warnings": True,
         "progress_hooks": [progress_hook],
-        "http_headers": {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
-        },
         "extractor_args": {
             "youtube": {
                 "player_client": ["android", "web"]
@@ -417,7 +414,16 @@ def main():
     parser.add_argument("--batch-analyze", type=str, help="JSON list of URLs to analyze in batch")
     parser.add_argument("--download", type=str, help="Execute download with JSON specification")
     parser.add_argument("--cookie-file", type=str, help="Optional cookie file path for authentication")
+    parser.add_argument("--daemon", action="store_true", help="Run worker in persistent background daemon mode")
     args = parser.parse_args()
+
+    if args.daemon:
+        print(f"[TurboGrab Worker] Daemon running. Python {sys.version.split()[0]}, yt-dlp {YTDLP_VERSION}.")
+        try:
+            while True:
+                time.sleep(30)
+        except (KeyboardInterrupt, SystemExit):
+            sys.exit(0)
 
     if args.check:
         env_status = check_environment()

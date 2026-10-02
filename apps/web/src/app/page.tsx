@@ -25,6 +25,7 @@ import {
   VideoQualityLabel, 
   VideoFormat 
 } from '@turbograb/types';
+import { getApiBaseUrl } from '@/lib/api';
 
 export default function HomePage() {
   const [openFaq, setOpenFaq] = useState<number | null>(null);
@@ -57,7 +58,7 @@ export default function HomePage() {
   });
 
   const getApiUrl = () => {
-    return process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api/v1';
+    return getApiBaseUrl();
   };
 
   React.useEffect(() => {

@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { Button, Card, Badge } from '@turbograb/ui';
 import { VideoFormat, VideoQualityLabel } from '@turbograb/types';
+import { getApiBaseUrl } from '@/lib/api';
 
 export default function SettingsPage() {
   const [smartModeEnabled, setSmartModeEnabled] = useState(false);
@@ -56,7 +57,7 @@ export default function SettingsPage() {
   const fetchCookiesStatus = async () => {
     try {
       const token = localStorage.getItem('turbograb_token');
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api/v1';
+      const apiUrl = getApiBaseUrl();
       const res = await fetch(`${apiUrl}/me/cookies`, {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
@@ -88,7 +89,7 @@ export default function SettingsPage() {
     setIsSavingCookie(true);
     try {
       const token = localStorage.getItem('turbograb_token');
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api/v1';
+      const apiUrl = getApiBaseUrl();
       const res = await fetch(`${apiUrl}/me/cookies`, {
         method: 'POST',
         headers: {
@@ -110,7 +111,7 @@ export default function SettingsPage() {
   const handleDeleteCookie = async (platform: string) => {
     try {
       const token = localStorage.getItem('turbograb_token');
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api/v1';
+      const apiUrl = getApiBaseUrl();
       const res = await fetch(`${apiUrl}/me/cookies/${platform}`, {
         method: 'DELETE',
         headers: token ? { Authorization: `Bearer ${token}` } : {},

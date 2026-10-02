@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { Button, Card, Badge } from '@turbograb/ui';
 import { DownloadItem } from '@turbograb/types';
+import { getApiBaseUrl, resolveDownloadUrl } from '@/lib/api';
 
 export default function HistoryPage() {
   const [items, setItems] = useState<DownloadItem[]>([]);
@@ -26,7 +27,7 @@ export default function HistoryPage() {
   const [isLoading, setIsLoading] = useState(true);
 
   const getApiUrl = () => {
-    return process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api/v1';
+    return getApiBaseUrl();
   };
 
   const fetchHistory = async () => {
@@ -230,7 +231,7 @@ export default function HistoryPage() {
               <div className="self-end sm:self-auto shrink-0">
                 {item.signedUrl ? (
                   <a
-                    href={item.signedUrl.startsWith('http') ? item.signedUrl : `http://localhost:4000${item.signedUrl}`}
+                    href={resolveDownloadUrl(item.signedUrl)}
                     target="_blank"
                     rel="noopener noreferrer"
                     download

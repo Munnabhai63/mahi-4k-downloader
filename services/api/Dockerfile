@@ -6,6 +6,7 @@ RUN corepack enable && corepack prepare pnpm@12.4.1 --activate
 COPY package.json pnpm-workspace.yaml pnpm-lock.yaml* ./
 COPY packages/ ./packages/
 COPY services/api/ ./services/api/
+COPY services/worker/ ./services/worker/
 
 RUN pnpm install --frozen-lockfile || pnpm install
 RUN pnpm --filter @turbograb/api build
@@ -13,7 +14,10 @@ RUN pnpm --filter @turbograb/api build
 FROM node:22-alpine AS runner
 WORKDIR /app
 ENV NODE_ENV=production
-RUN corepack enable && corepack prepare pnpm@12.4.1 --activate
+ENV PYTHON_PATH=python3
+
+RUN apk add --no-cache python3 py3-pip ffmpeg aria2 curl \
+    && pip install --no-cache-dir --break-system-packages yt-dlp requests redis pydantic
 
 COPY --from=builder /app ./
 

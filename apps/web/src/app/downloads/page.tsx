@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { Badge, Card, Button } from '@turbograb/ui';
 import { DownloadItem } from '@turbograb/types';
+import { getApiBaseUrl, resolveDownloadUrl } from '@/lib/api';
 
 export default function DownloadsPage() {
   const [downloads, setDownloads] = useState<DownloadItem[]>([]);
@@ -24,7 +25,7 @@ export default function DownloadsPage() {
   const [isLoading, setIsLoading] = useState(true);
 
   const getApiUrl = () => {
-    return process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api/v1';
+    return getApiBaseUrl();
   };
 
   const fetchDownloads = async () => {
@@ -242,7 +243,7 @@ export default function DownloadsPage() {
                 <div className="flex items-center gap-2 self-end sm:self-auto shrink-0">
                   {isCompleted && item.signedUrl && (
                     <a
-                      href={item.signedUrl.startsWith('http') ? item.signedUrl : `http://localhost:4000${item.signedUrl}`}
+                      href={resolveDownloadUrl(item.signedUrl)}
                       target="_blank"
                       rel="noopener noreferrer"
                       download

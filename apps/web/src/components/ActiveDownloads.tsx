@@ -15,6 +15,7 @@ import {
 import { Card, Badge, ProgressBar, Button } from '@turbograb/ui';
 import { DownloadItem, ProgressEventPayload } from '@turbograb/types';
 import { io, Socket } from 'socket.io-client';
+import { getSocketConfig, resolveDownloadUrl } from '@/lib/api';
 
 interface ActiveDownloadsProps {
   downloads: DownloadItem[];
@@ -37,11 +38,12 @@ export const ActiveDownloads: React.FC<ActiveDownloadsProps> = ({
 
   // Connect to Socket.IO real-time progress gateway
   useEffect(() => {
-    const socketUrl = process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:4000';
+    const { origin, path } = getSocketConfig();
     let socket: Socket;
 
     try {
-      socket = io(socketUrl, {
+      socket = io(origin, {
+        path,
         transports: ['websocket', 'polling'],
         reconnectionAttempts: 5,
       });
@@ -211,7 +213,7 @@ export const ActiveDownloads: React.FC<ActiveDownloadsProps> = ({
                 <div className="flex items-center gap-2 self-end sm:self-auto shrink-0">
                   {isCompleted && item.signedUrl && (
                     <a
-                      href={item.signedUrl.startsWith('http') ? item.signedUrl : `http://localhost:4000${item.signedUrl}`}
+                      href={resolveDownloadUrl(item.signedUrl)}
                       target="_blank"
                       rel="noopener noreferrer"
                       download
