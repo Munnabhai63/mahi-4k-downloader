@@ -19,7 +19,6 @@ out/
 !.env.example
 .tunnel_token
 secrets/
-*.txt
 youtube-cookies.txt
 
 # Logs

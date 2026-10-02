@@ -11,7 +11,8 @@ import argparse
 import shutil
 import hashlib
 import time
-from typing import Dict, Any, List, Optional
+import subprocess
+from typing import Dict, Any, List, Optional, Tuple
 
 try:
     import yt_dlp
@@ -21,6 +22,14 @@ try:
 except ImportError:
     YTDLP_AVAILABLE = False
     YTDLP_VERSION = None
+
+try:
+    import yt_dlp_ejs
+    EJS_INSTALLED = True
+    EJS_VERSION = getattr(yt_dlp_ejs, "__version__", "0.8.0")
+except ImportError:
+    EJS_INSTALLED = False
+    EJS_VERSION = "none"
 
 def check_environment() -> Dict[str, Any]:
     """Inspect worker dependencies, CLI tools, and runtime capability."""
@@ -37,6 +46,7 @@ def check_environment() -> Dict[str, Any]:
         "ffmpeg_path": ffmpeg_path,
         "aria2c_available": aria2c_path is not None,
         "aria2c_path": aria2c_path,
+        "runtime_diagnostics": get_runtime_diagnostics(),
     }
 
 def detect_platform(url: str, extractor_key: Optional[str] = None) -> str:
@@ -69,7 +79,27 @@ def detect_platform(url: str, extractor_key: Optional[str] = None) -> str:
         return "likee"
 SERVER_COOKIE_FILE = os.getenv("YOUTUBE_COOKIE_FILE", "/etc/secrets/youtube-cookies.txt")
 
-def _get_node_runtime() -> Optional[Dict[str, Any]]:
+def _get_js_runtime() -> Tuple[Optional[Dict[str, Any]], Dict[str, str]]:
+    """
+    Detect Deno (preferred by yt-dlp) or Node.js (>=22.0.0).
+    Returns (ydl_js_runtimes_dict, info_dict)
+    """
+    # 1. Deno check (yt-dlp's default and preferred JS runtime)
+    deno_bin = shutil.which("deno")
+    if not deno_bin:
+        for candidate in ["/usr/local/bin/deno", "/usr/bin/deno", "/bin/deno"]:
+            if os.path.isfile(candidate) and os.access(candidate, os.X_OK):
+                deno_bin = candidate
+                break
+    if deno_bin:
+        ver = "unknown"
+        try:
+            ver = subprocess.check_output([deno_bin, "--version"], text=True).splitlines()[0].strip()
+        except Exception:
+            pass
+        return {"deno": {"path": deno_bin}}, {"name": "deno", "version": ver, "path": deno_bin}
+
+    # 2. Node check
     node_bin = shutil.which("node")
     if not node_bin:
         for candidate in ["/usr/local/bin/node", "/usr/bin/node", "/bin/node"]:
@@ -77,8 +107,29 @@ def _get_node_runtime() -> Optional[Dict[str, Any]]:
                 node_bin = candidate
                 break
     if node_bin:
-        return {"node": {"path": node_bin}}
-    return None
+        ver = "unknown"
+        try:
+            ver = subprocess.check_output([node_bin, "--version"], text=True).strip()
+        except Exception:
+            pass
+        return {"node": {"path": node_bin}}, {"name": "node", "version": ver, "path": node_bin}
+
+    return None, {"name": "none", "version": "none", "path": "none"}
+
+def get_runtime_diagnostics() -> Dict[str, Any]:
+    """Return verified runtime parameters: yt-dlp, JS engine, and EJS source/version."""
+    ytdlp_ver = YTDLP_VERSION if YTDLP_AVAILABLE else "unavailable"
+    _, js_info = _get_js_runtime()
+    ejs_info = {
+        "source": "python package (yt-dlp-ejs)" if EJS_INSTALLED else "remote fallback (ejs:github)",
+        "version": EJS_VERSION if EJS_INSTALLED else "remote",
+        "installed": EJS_INSTALLED,
+    }
+    return {
+        "ytdlp_version": ytdlp_ver,
+        "js_runtime": js_info,
+        "ejs_component": ejs_info,
+    }
 
 def _get_server_cookie_file() -> Optional[str]:
     if os.path.isfile(SERVER_COOKIE_FILE) and os.path.getsize(SERVER_COOKIE_FILE) > 0:
@@ -102,9 +153,11 @@ def analyze_url(url: str, cookie_file: Optional[str] = None) -> Dict[str, Any]:
         }
     }
 
-    js_runtime = _get_node_runtime()
+    js_runtime, _ = _get_js_runtime()
     if js_runtime:
         ydl_opts["js_runtimes"] = js_runtime
+
+    if not EJS_INSTALLED:
         ydl_opts["remote_components"] = ["ejs:github"]
 
     active_cookie = cookie_file or _get_server_cookie_file()
@@ -344,9 +397,11 @@ def download_video(spec: Dict[str, Any]):
         }
     }
 
-    js_runtime = _get_node_runtime()
+    js_runtime, _ = _get_js_runtime()
     if js_runtime:
         ydl_opts["js_runtimes"] = js_runtime
+
+    if not EJS_INSTALLED:
         ydl_opts["remote_components"] = ["ejs:github"]
 
     # Audio postprocessing
@@ -437,6 +492,7 @@ def batch_analyze_urls(urls: List[str], cookie_file: Optional[str] = None) -> Di
 def main():
     parser = argparse.ArgumentParser(description="TurboGrab Video Download Worker")
     parser.add_argument("--check", action="store_true", help="Run health check and print status JSON")
+    parser.add_argument("--diagnostics", action="store_true", help="Print runtime diagnostics (yt-dlp, JS engine, EJS)")
     parser.add_argument("--analyze", type=str, help="Extract metadata for the given video URL")
     parser.add_argument("--batch-analyze", type=str, help="JSON list of URLs to analyze in batch")
     parser.add_argument("--download", type=str, help="Execute download with JSON specification")
@@ -444,8 +500,14 @@ def main():
     parser.add_argument("--daemon", action="store_true", help="Run worker in persistent background daemon mode")
     args = parser.parse_args()
 
+    if args.diagnostics:
+        diag = get_runtime_diagnostics()
+        print(json.dumps(diag, indent=2))
+        sys.exit(0)
+
     if args.daemon:
-        print(f"[TurboGrab Worker] Daemon running. Python {sys.version.split()[0]}, yt-dlp {YTDLP_VERSION}.")
+        diag = get_runtime_diagnostics()
+        print(f"[TurboGrab Worker] Daemon running. Python {sys.version.split()[0]}, yt-dlp {diag['ytdlp_version']}, JS runtime: {diag['js_runtime']['name']} ({diag['js_runtime']['version']}), EJS: {diag['ejs_component']['source']} {diag['ejs_component']['version']}.")
         try:
             while True:
                 time.sleep(30)

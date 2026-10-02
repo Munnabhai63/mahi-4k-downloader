@@ -17,7 +17,7 @@ ENV NODE_ENV=production
 ENV PYTHON_PATH=python3
 
 RUN apk add --no-cache python3 py3-pip ffmpeg aria2 curl \
-    && pip install --no-cache-dir --break-system-packages yt-dlp requests redis pydantic
+    && pip install --no-cache-dir --break-system-packages yt-dlp yt-dlp-ejs requests redis pydantic
 
 COPY --from=builder /app ./
 
