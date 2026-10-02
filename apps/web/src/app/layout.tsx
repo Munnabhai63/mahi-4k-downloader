@@ -79,6 +79,9 @@ export const metadata: Metadata = {
     ],
   },
   manifest: '/manifest.json',
+  verification: {
+    google: 'EceHA3fkX__gFhBGdB3Qdplj1s5XfMcqYTupTXqOpEg',
+  },
 };
 
 export const viewport: Viewport = {
@@ -135,6 +138,10 @@ export default function RootLayout({
       <head>
         <link rel="manifest" href="/manifest.json" />
         <meta name="theme-color" content="#16A34A" />
+        <meta
+          name="google-site-verification"
+          content="EceHA3fkX__gFhBGdB3Qdplj1s5XfMcqYTupTXqOpEg"
+        />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdWebSite) }}
