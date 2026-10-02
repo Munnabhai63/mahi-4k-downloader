@@ -46,11 +46,11 @@ export default function HomePage() {
     studentDailyLimit: number;
     freeDailyLimit: number;
   }>({
-    siteTitle: 'Mahi 4K Downloader',
-    heroHeadline: 'Download Any Video in 4K & MP3',
-    heroSubtitle: 'Fast, ad-free downloads by Munna Bhai. Paste any link below to begin.',
-    creatorName: 'Munna Bhai',
-    announcementNotice: 'Official Mahi 4K Downloader by Munna Bhai',
+    siteTitle: 'My 4K Downloader',
+    heroHeadline: 'My 4K Downloader',
+    heroSubtitle: 'Free 4K Video Downloader. Fast, ad-free downloads in 4K & MP3. Paste any link below to begin.',
+    creatorName: 'My 4K Downloader',
+    announcementNotice: 'Official My 4K Downloader',
     announcementBanner: { enabled: false, message: '', level: 'info' },
     studentDailyLimit: 50,
     freeDailyLimit: 15,
@@ -328,28 +328,28 @@ export default function HomePage() {
 
   const faqs = [
     {
-      q: 'Who created Mahi 4K Downloader?',
-      a: 'Mahi 4K Downloader is founded and developed by Munna Bhai as an ultra-fast, ad-free media downloader powered by TurboGrab engine.',
+      q: 'What is My 4K Downloader?',
+      a: 'My 4K Downloader is a fast, 100% free online video and audio downloader. It allows you to download videos in 4K UHD, 1080p, and high-bitrate 320kbps MP3 audio from YouTube, Instagram, TikTok, Facebook, Twitter/X, and 1,000+ websites directly in your browser.',
     },
     {
-      q: 'Is Mahi 4K Downloader free to use?',
-      a: 'Yes! Mahi 4K Downloader by Munna Bhai provides 50 free high-speed downloads daily for students and everyday users without ads.',
+      q: 'Is My 4K Downloader free to use?',
+      a: 'Yes, My 4K Downloader is completely free with no subscriptions, paid tiers, or hidden fees. Everyday users receive 50 high-speed daily downloads with zero intrusive advertisements.',
     },
     {
-      q: 'Do I need to install any desktop software?',
-      a: 'No software installation is required! It runs directly in any modern browser. Dedicated Desktop apps and Chrome extensions are also available.',
+      q: 'How do I download 4K videos using My 4K Downloader?',
+      a: 'Simply copy the video link from YouTube, Instagram, or any supported platform, paste it into the search bar, select your desired resolution (such as 4K or 1080p) or MP3 format, and click download.',
     },
     {
-      q: 'Does it support TikTok without watermark?',
-      a: 'Yes! TikTok videos are automatically extracted in crystal-clear HD without any watermark logo.',
+      q: 'Can I download TikTok videos without watermarks?',
+      a: 'Yes! TikTok videos are automatically extracted in clean, crystal-clear HD resolution without any watermark logo.',
     },
     {
-      q: 'Are downloaded files stored permanently on your servers?',
-      a: 'Never. Files are processed on-the-fly and automatically purged within 6 hours to protect your privacy.',
+      q: 'Which video and audio formats are supported?',
+      a: 'My 4K Downloader supports video resolutions from 360p up to 8K Ultra HD in MP4, MKV, and WebM containers, as well as MP3 (up to 320kbps), M4A, and WAV audio formats.',
     },
     {
-      q: 'Can I download whole playlists at once?',
-      a: 'Yes! Paste any playlist URL or multiple links in batch mode to queue all items in one click.',
+      q: 'Are my downloads and privacy protected?',
+      a: 'Yes. We do not track users or permanently store your downloaded files. All media streams are processed over secure HTTPS connections and automatically deleted within 6 hours.',
     },
   ];
 
@@ -374,12 +374,14 @@ export default function HomePage() {
           <span>{userRole === 'admin' ? 'Unlimited Downloads' : `${dynamicConfig.studentDailyLimit} Daily Downloads`}</span>
         </div>
 
-        <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black tracking-tight text-[#0F172A] mb-3 leading-tight font-poppins">
-          Download Any Video in <span className="bg-gradient-to-r from-[#16A34A] to-[#10B981] bg-clip-text text-transparent">4K & MP3</span>
+        <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black tracking-tight text-[#0F172A] mb-2 leading-tight font-poppins">
+          My <span className="bg-gradient-to-r from-[#16A34A] to-[#10B981] bg-clip-text text-transparent">4K Downloader</span>
         </h1>
-
-        <p className="text-sm sm:text-base text-[#64748B] max-w-md mx-auto mb-8 font-medium">
-          Fast, ad-free downloads by Munna Bhai. Paste any link below to begin.
+        <p className="text-base sm:text-lg text-[#16A34A] font-bold max-w-xl mx-auto mb-2 font-poppins">
+          Free 4K Video Downloader
+        </p>
+        <p className="text-xs sm:text-sm text-[#64748B] max-w-lg mx-auto mb-8 font-medium">
+          Fast, ad-free downloads in 4K UHD, 1080p, and MP3 audio from YouTube, Instagram, TikTok, and 1,000+ sites.
         </p>
 
         {/* Paste Bar */}
@@ -539,7 +541,7 @@ export default function HomePage() {
       <section id="features" className="w-full max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-14">
         <div className="text-center max-w-lg mx-auto mb-10">
           <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-[#0F172A] font-poppins mb-2">
-            Why Download with Mahi 4K
+            Why Choose My 4K Downloader
           </h2>
           <p className="text-xs sm:text-sm text-[#64748B]">
             Engineered for high-speed grabbing, maximum clarity, and total privacy.
@@ -585,13 +587,59 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* Educational & Semantic SEO Overview Section */}
+      <section className="w-full max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+        <div className="bg-[#F8FAF9] border border-[#E2E8F0] rounded-3xl p-6 sm:p-10 shadow-xs space-y-6">
+          <div className="max-w-3xl">
+            <h2 className="text-xl sm:text-2xl font-extrabold text-[#0F172A] font-poppins mb-3">
+              About My 4K Downloader – Free 4K Video Downloader
+            </h2>
+            <p className="text-xs sm:text-sm text-[#475569] leading-relaxed">
+              <strong>My 4K Downloader</strong> is a web-based, zero-installation video downloader designed to deliver ultra-high-definition video and pristine audio without intrusive ads, artificial rate limits, or bloated desktop software. Paste a link from any major video platform and save your favorite content in stunning 4K UHD, 1080p Full HD, or 320kbps MP3 audio directly to your device.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+            <div className="bg-white p-5 rounded-2xl border border-[#E2E8F0] shadow-2xs">
+              <h3 className="text-sm font-bold text-[#0F172A] mb-2 flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-[#16A34A]" />
+                Supported Video Resolutions
+              </h3>
+              <p className="text-xs text-[#64748B] leading-relaxed">
+                Download in <strong>8K Ultra HD, 4K UHD (2160p), 2K QHD (1440p), 1080p Full HD, 720p HD</strong>, and standard resolutions across MP4, MKV, and WebM containers.
+              </p>
+            </div>
+
+            <div className="bg-white p-5 rounded-2xl border border-[#E2E8F0] shadow-2xs">
+              <h3 className="text-sm font-bold text-[#0F172A] mb-2 flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-[#16A34A]" />
+                Studio-Quality Audio Extraction
+              </h3>
+              <p className="text-xs text-[#64748B] leading-relaxed">
+                Extract high-bitrate <strong>MP3 audio at 320kbps, 256kbps, 192kbps</strong>, as well as lossless M4A, AAC, and WAV audio streams with full metadata.
+              </p>
+            </div>
+
+            <div className="bg-white p-5 rounded-2xl border border-[#E2E8F0] shadow-2xs">
+              <h3 className="text-sm font-bold text-[#0F172A] mb-2 flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-[#16A34A]" />
+                Privacy & Zero-Tracking Guarantee
+              </h3>
+              <p className="text-xs text-[#64748B] leading-relaxed">
+                Your privacy is paramount. We do not require accounts for standard downloading, never log your download history, and auto-delete temporary stream files every 6 hours.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Clean FAQ Section */}
       <section id="faq" className="w-full max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-14">
         <div className="text-center max-w-md mx-auto mb-8">
           <h2 className="text-2xl sm:text-3xl font-bold text-[#0F172A] font-poppins mb-1.5">
             Frequently Asked Questions
           </h2>
-          <p className="text-xs sm:text-sm text-[#64748B]">Everything you need to know about Mahi 4K Downloader.</p>
+          <p className="text-xs sm:text-sm text-[#64748B]">Everything you need to know about My 4K Downloader.</p>
         </div>
 
         <div className="space-y-2.5">

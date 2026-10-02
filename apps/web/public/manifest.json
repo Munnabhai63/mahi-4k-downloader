@@ -1,7 +1,7 @@
 {
-  "name": "Mahi 4K Downloader by Munna Bhai (Turbo)",
-  "short_name": "Mahi 4K",
-  "description": "Mahi 4K Downloader by Munna Bhai. Download 4K & 8K videos and audio from YouTube, Instagram, TikTok, and 1,000+ platforms.",
+  "name": "My 4K Downloader",
+  "short_name": "My 4K Downloader",
+  "description": "My 4K Downloader – Free 4K Video Downloader. Download 4K & 8K videos and MP3 audio from YouTube, Instagram, TikTok, and 1,000+ platforms.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#F8FAF9",
@@ -9,16 +9,15 @@
   "orientation": "portrait-primary",
   "icons": [
     {
-      "src": "/icon-192.png",
-      "sizes": "192x192",
+      "src": "/icon.png",
+      "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "/icon-512.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any maskable"
+      "src": "/favicon.ico",
+      "sizes": "64x64 32x32 24x24 16x16",
+      "type": "image/x-icon"
     }
   ]
 }

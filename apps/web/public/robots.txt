@@ -1,0 +1,11 @@
+# robots.txt for My 4K Downloader
+# https://mahi-4k-downloader.pages.dev
+
+User-agent: *
+Allow: /
+
+# Host
+Host: https://mahi-4k-downloader.pages.dev
+
+# Sitemaps
+Sitemap: https://mahi-4k-downloader.pages.dev/sitemap.xml

@@ -4,8 +4,11 @@ import { Lock, ArrowLeft, Shield, Trash2, Key } from 'lucide-react';
 import { Badge, Card } from '@turbograb/ui';
 
 export const metadata = {
-  title: 'Privacy Policy | TurboGrab',
-  description: 'Privacy Policy, data protection, and encryption practices for TurboGrab video downloader.',
+  title: 'Privacy Policy | My 4K Downloader',
+  description: 'Privacy Policy, zero-logging data protection, and encryption practices for My 4K Downloader.',
+  alternates: {
+    canonical: 'https://mahi-4k-downloader.pages.dev/privacy',
+  },
 };
 
 export default function PrivacyPage() {

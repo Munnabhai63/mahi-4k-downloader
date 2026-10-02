@@ -53,14 +53,14 @@ export const Header: React.FC = () => {
           <div className="flex flex-col">
             <div className="flex items-center gap-1.5">
               <span className="text-xl font-extrabold tracking-tight text-[#0F172A] font-poppins">
-                Mahi <span className="text-[#16A34A]">4K</span>
+                My <span className="text-[#16A34A]">4K</span> Downloader
               </span>
               <span className="text-[10px] bg-[#DCFCE7] text-[#16A34A] font-bold px-1.5 py-0.2 rounded uppercase tracking-wider">
-                Turbo
+                Free
               </span>
             </div>
             <span className="text-[10px] text-[#64748B] font-semibold -mt-0.5 tracking-wide">
-              by Munna Bhai
+              Fast Video & Audio Downloader
             </span>
           </div>
         </Link>

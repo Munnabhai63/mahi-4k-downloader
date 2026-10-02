@@ -15,15 +15,15 @@ export const Footer: React.FC = () => {
               </div>
               <div className="flex items-center gap-2">
                 <span className="text-lg font-extrabold text-[#0F172A] font-poppins">
-                  Mahi <span className="text-[#16A34A]">4K Downloader</span>
+                  My <span className="text-[#16A34A]">4K Downloader</span>
                 </span>
                 <span className="text-[10px] bg-[#DCFCE7] text-[#16A34A] font-bold px-1.5 py-0.5 rounded uppercase">
-                  Turbo
+                  Free
                 </span>
               </div>
             </div>
             <p className="text-sm text-[#64748B] max-w-sm">
-              Ultra-fast universal video downloader powered by TurboGrab engine. Designed & developed with ❤️ by <strong className="text-[#0F172A] font-bold">Munna Bhai</strong> for seamless 4K & MP3 downloading.
+              Free, fast, and secure 4K video and MP3 audio downloader. Designed for high-clarity 4K & 1080p saving without ads or interruptions.
             </p>
             {/* Creator Badge */}
             <div className="inline-flex items-center gap-2.5 px-3 py-1.5 rounded-xl bg-white border border-[#E2E8F0] shadow-2xs">

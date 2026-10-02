@@ -4,8 +4,11 @@ import { ShieldCheck, ArrowLeft, AlertTriangle } from 'lucide-react';
 import { Badge, Card } from '@turbograb/ui';
 
 export const metadata = {
-  title: 'Terms of Service | TurboGrab',
-  description: 'Terms of Service and legal usage conditions for TurboGrab universal video downloader.',
+  title: 'Terms of Service | My 4K Downloader',
+  description: 'Terms of Service and legal usage conditions for My 4K Downloader universal video and audio downloader.',
+  alternates: {
+    canonical: 'https://mahi-4k-downloader.pages.dev/terms',
+  },
 };
 
 export default function TermsPage() {
