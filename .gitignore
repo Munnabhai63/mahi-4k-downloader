@@ -17,6 +17,7 @@ out/
 .env.local
 .env.*.local
 !.env.example
+.tunnel_token
 
 # Logs
 logs/

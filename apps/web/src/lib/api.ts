@@ -3,7 +3,7 @@
  * Centralizes all backend communication, socket resolution, and download streaming URLs.
  */
 
-export const PRODUCTION_DEFAULT_BACKEND = 'https://bow-tattoo-islamic-regulatory.trycloudflare.com';
+export const PRODUCTION_DEFAULT_BACKEND = 'https://api4k.mahiskills.in';
 
 /**
  * Returns the fully qualified API base URL (e.g. https://.../api/v1 or http://localhost:4000/api/v1)
