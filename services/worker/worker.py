@@ -67,7 +67,23 @@ def detect_platform(url: str, extractor_key: Optional[str] = None) -> str:
         return "snapchat"
     if "likee.video" in url_lower:
         return "likee"
-    return (extractor_key or "generic").lower()
+SERVER_COOKIE_FILE = os.getenv("YOUTUBE_COOKIE_FILE", "/etc/secrets/youtube-cookies.txt")
+
+def _get_node_runtime() -> Optional[Dict[str, Any]]:
+    node_bin = shutil.which("node")
+    if not node_bin:
+        for candidate in ["/usr/local/bin/node", "/usr/bin/node", "/bin/node"]:
+            if os.path.isfile(candidate) and os.access(candidate, os.X_OK):
+                node_bin = candidate
+                break
+    if node_bin:
+        return {"node": {"path": node_bin}}
+    return None
+
+def _get_server_cookie_file() -> Optional[str]:
+    if os.path.isfile(SERVER_COOKIE_FILE) and os.path.getsize(SERVER_COOKIE_FILE) > 0:
+        return SERVER_COOKIE_FILE
+    return None
 
 def analyze_url(url: str, cookie_file: Optional[str] = None) -> Dict[str, Any]:
     if not YTDLP_AVAILABLE:
@@ -80,14 +96,20 @@ def analyze_url(url: str, cookie_file: Optional[str] = None) -> Dict[str, Any]:
         "extract_flat": False,
         "extractor_args": {
             "youtube": {
-                "player_client": ["android", "web"]
+                "player_client": ["android", "ios", "web", "mweb"]
             },
             "tiktok": {"api_hostname": ["api22-core-c-useast1a.tiktokv.com"]}
         }
     }
 
-    if cookie_file and os.path.isfile(cookie_file):
-        ydl_opts["cookiefile"] = cookie_file
+    js_runtime = _get_node_runtime()
+    if js_runtime:
+        ydl_opts["js_runtimes"] = js_runtime
+        ydl_opts["remote_components"] = ["ejs:github"]
+
+    active_cookie = cookie_file or _get_server_cookie_file()
+    if active_cookie and os.path.isfile(active_cookie):
+        ydl_opts["cookiefile"] = active_cookie
 
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         info = ydl.extract_info(url, download=False)
@@ -316,11 +338,16 @@ def download_video(spec: Dict[str, Any]):
         "progress_hooks": [progress_hook],
         "extractor_args": {
             "youtube": {
-                "player_client": ["android", "web"]
+                "player_client": ["android", "ios", "web", "mweb"]
             },
             "tiktok": {"api_hostname": ["api22-core-c-useast1a.tiktokv.com"]}
         }
     }
+
+    js_runtime = _get_node_runtime()
+    if js_runtime:
+        ydl_opts["js_runtimes"] = js_runtime
+        ydl_opts["remote_components"] = ["ejs:github"]
 
     # Audio postprocessing
     if quality == "Audio" or target_format in ["mp3", "m4a", "ogg", "wav"]:
@@ -341,8 +368,8 @@ def download_video(spec: Dict[str, Any]):
         if spec.get("embedSubtitles") and shutil.which("ffmpeg"):
             ydl_opts["embedsubtitles"] = True
 
-    # Cookies vault support
-    cookie_file = spec.get("cookieFile")
+    # Cookies vault & server-side cookies support
+    cookie_file = spec.get("cookieFile") or _get_server_cookie_file()
     if cookie_file and os.path.isfile(cookie_file):
         ydl_opts["cookiefile"] = cookie_file
 

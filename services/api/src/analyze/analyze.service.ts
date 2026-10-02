@@ -153,8 +153,33 @@ export class AnalyzeService {
         clearTimeout(timer);
 
         if (code !== 0) {
-          const errMsg = stderrData || stdoutData || 'Failed to extract video information.';
-          return reject(new BadRequestException(`Extraction failed: ${errMsg.trim()}`));
+          const rawErr = stderrData || stdoutData || 'Failed to extract video information.';
+          console.error(`[Worker Extraction Error] URL: ${url}`, rawErr);
+
+          const lowerErr = rawErr.toLowerCase();
+          const isYouTube = url.includes('youtube.com') || url.includes('youtu.be') || rawErr.includes('[youtube]');
+          let userSafeMsg = 'Failed to extract video information. Please verify the URL and try again.';
+
+          if (
+            isYouTube && (
+              lowerErr.includes('not a bot') ||
+              lowerErr.includes('login_required') ||
+              lowerErr.includes('--cookies') ||
+              lowerErr.includes('bot')
+            )
+          ) {
+            userSafeMsg = 'YouTube temporarily requires additional verification for this video. Please try again later.';
+          } else if (lowerErr.includes('private video') || lowerErr.includes('this video is private') || lowerErr.includes('only works when logged-in')) {
+            userSafeMsg = 'This video is private or requires account login to access.';
+          } else if (lowerErr.includes('video unavailable') || lowerErr.includes('does not exist') || lowerErr.includes('not found')) {
+            userSafeMsg = 'This video is unavailable or has been removed.';
+          } else if (lowerErr.includes('geo') || lowerErr.includes('location') || lowerErr.includes('not available in your country')) {
+            userSafeMsg = 'This video is geographically restricted in the server region.';
+          } else if (lowerErr.includes('bot') || lowerErr.includes('verification')) {
+            userSafeMsg = 'The provider temporarily requires additional verification for this video.';
+          }
+
+          return reject(new BadRequestException(userSafeMsg));
         }
 
         const lines = stdoutData.split('\n');
@@ -248,9 +273,16 @@ export class AnalyzeService {
           if (trimmed.startsWith('__BATCH_RESULT__:')) {
             try {
               const parsed = JSON.parse(trimmed.substring('__BATCH_RESULT__:'.length));
+              const sanitizedFailed = (parsed.failed || []).map((f: any) => {
+                let err = f.error || 'Extraction failed';
+                if (err.includes('Sign in to confirm you’re not a bot') || err.includes('LOGIN_REQUIRED') || err.includes('--cookies')) {
+                  err = 'YouTube temporarily requires additional verification for this video.';
+                }
+                return { ...f, error: err };
+              });
               return resolve({
                 results: parsed.results || [],
-                failed: [...failed, ...(parsed.failed || [])],
+                failed: [...failed, ...sanitizedFailed],
               });
             } catch (err: any) {
               return reject(new InternalServerErrorException(`Malformed batch worker output: ${err.message}`));

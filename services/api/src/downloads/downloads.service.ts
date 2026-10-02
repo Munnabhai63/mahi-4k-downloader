@@ -246,7 +246,35 @@ export class DownloadsService {
           try {
             const payload = JSON.parse(trimmed.substring('__ERROR__:'.length));
             item.status = 'FAILED';
-            item.errorMsg = payload.errorMsg || 'Download failed in worker process';
+            const rawErr = payload.errorMsg || 'Download failed in worker process';
+            this.logger.error(`[Worker Download Error] ID: ${item.id}: ${rawErr}`);
+
+            const lowerErr = rawErr.toLowerCase();
+            const isYouTube = item.url.includes('youtube.com') || item.url.includes('youtu.be') || rawErr.includes('[youtube]');
+            let userSafeMsg = 'Download failed in worker process. Please try again.';
+
+            if (
+              isYouTube && (
+                lowerErr.includes('not a bot') ||
+                lowerErr.includes('login_required') ||
+                lowerErr.includes('--cookies') ||
+                lowerErr.includes('bot')
+              )
+            ) {
+              userSafeMsg = 'YouTube temporarily requires additional verification for this video. Please try again later.';
+            } else if (lowerErr.includes('private video') || lowerErr.includes('this video is private') || lowerErr.includes('only works when logged-in')) {
+              userSafeMsg = 'This video is private or requires account login to access.';
+            } else if (lowerErr.includes('video unavailable') || lowerErr.includes('does not exist') || lowerErr.includes('not found')) {
+              userSafeMsg = 'This video is unavailable or has been removed.';
+            } else if (lowerErr.includes('geo') || lowerErr.includes('location') || lowerErr.includes('not available in your country')) {
+              userSafeMsg = 'This video is geographically restricted in the server region.';
+            } else if (lowerErr.includes('bot') || lowerErr.includes('verification')) {
+              userSafeMsg = 'The provider temporarily requires additional verification for this video.';
+            } else {
+              userSafeMsg = 'Download failed. Please try a different quality or verify the URL.';
+            }
+
+            item.errorMsg = userSafeMsg;
 
             this.eventsGateway.emitProgress({
               type: 'failed',

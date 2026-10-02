@@ -89,8 +89,10 @@ services:
       - REDIS_URL=redis://mahi_redis:6379
       - TEMP_STORAGE_PATH=/tmp/turbograb
       - PYTHONUNBUFFERED=1
+      - YOUTUBE_COOKIE_FILE=/etc/secrets/youtube-cookies.txt
     volumes:
       - mahi_temp_storage:/tmp/turbograb
+      - ./secrets:/etc/secrets:ro
     deploy:
       resources:
         limits:
@@ -119,12 +121,14 @@ services:
       - TEMP_STORAGE_PATH=/tmp/turbograb
       - CORS_ORIGIN=${MAHI_FRONTEND_ORIGIN:-*}
       - JWT_SECRET=${MAHI_JWT_SECRET:-generate_secure_random_key}
+      - YOUTUBE_COOKIE_FILE=/etc/secrets/youtube-cookies.txt
     ports:
       # Strictly bind to 127.0.0.1 (loopback) to prevent accidental public exposure.
       # Reverse proxy (Caddy/Nginx) forwards requests from domain to this port.
       - "127.0.0.1:${MAHI_API_PORT:-4080}:4000"
     volumes:
       - mahi_temp_storage:/tmp/turbograb
+      - ./secrets:/etc/secrets:ro
     deploy:
       resources:
         limits:
