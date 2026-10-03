@@ -155,35 +155,24 @@ export class AnalyzeService {
           console.error(`[Worker Extraction Error] URL: ${url}`, rawErr);
 
           const lowerErr = rawErr.toLowerCase();
-          const isYouTube = url.includes('youtube.com') || url.includes('youtu.be') || rawErr.includes('[youtube]');
-          let userSafeMsg = 'Failed to extract video information. Please verify the URL and try again.';
+          let userSafeMsg = 'Unable to download this link right now.';
 
-          if (
-            isYouTube && (
-              lowerErr.includes('not a bot') ||
-              lowerErr.includes('login_required') ||
-              lowerErr.includes('--cookies') ||
-              lowerErr.includes('bot')
-            )
-          ) {
-            userSafeMsg = 'This video is not available for direct download right now. Please try another link.';
-          } else if (lowerErr.includes('private video') || lowerErr.includes('this video is private') || lowerErr.includes('only works when logged-in')) {
-            userSafeMsg = 'This video is private or requires account login to access.';
-          } else if (lowerErr.includes('video unavailable') || lowerErr.includes('does not exist') || lowerErr.includes('not found')) {
+          if (lowerErr.includes('private video') || lowerErr.includes('this video is private') || lowerErr.includes('only works when logged-in')) {
+            userSafeMsg = 'This video is private or restricted by its author.';
+          } else if (lowerErr.includes('video unavailable') || lowerErr.includes('does not exist') || lowerErr.includes('not found') || lowerErr.includes('404')) {
             userSafeMsg = 'This video is unavailable or has been removed.';
-          } else if (lowerErr.includes('geo') || lowerErr.includes('location') || lowerErr.includes('not available in your country')) {
+          } else if (lowerErr.includes('geo') || lowerErr.includes('location') || lowerErr.includes('not available in your country') || lowerErr.includes('geographic restriction')) {
             userSafeMsg = 'This video is geographically restricted in the server region.';
           } else if (
             lowerErr.includes('unsupported url') ||
             lowerErr.includes('no suitable extractor') ||
-            lowerErr.includes('is not a valid url') ||
-            lowerErr.includes('unsupported')
+            lowerErr.includes('is not a valid url')
           ) {
             userSafeMsg = 'Unsupported link.';
-          } else if (lowerErr.includes('bot') || lowerErr.includes('verification')) {
-            userSafeMsg = 'The provider temporarily requires additional verification for this video.';
+          } else if (lowerErr.includes('timeout') || lowerErr.includes('timed out') || lowerErr.includes('connection reset') || lowerErr.includes('network')) {
+            userSafeMsg = 'This source is temporarily unavailable.';
           } else {
-            userSafeMsg = 'Unsupported link.';
+            userSafeMsg = 'Unable to download this link right now.';
           }
 
           return reject(new BadRequestException(userSafeMsg));

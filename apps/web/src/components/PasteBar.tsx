@@ -8,15 +8,22 @@ interface PasteBarProps {
   onAnalyze?: (url: string, useSmartMode?: boolean) => void;
   onBatchAnalyze?: (urls: string[]) => void;
   isLoading?: boolean;
+  onClearError?: () => void;
 }
 
-export const PasteBar: React.FC<PasteBarProps> = ({ onAnalyze, onBatchAnalyze, isLoading = false }) => {
+export const PasteBar: React.FC<PasteBarProps> = ({
+  onAnalyze,
+  onBatchAnalyze,
+  isLoading = false,
+  onClearError,
+}) => {
   const [url, setUrl] = useState('');
   const [isBatchMode, setIsBatchMode] = useState(false);
   const [batchText, setBatchText] = useState('');
   const [copiedNotification, setCopiedNotification] = useState(false);
 
   const handlePaste = async () => {
+    if (onClearError) onClearError();
     try {
       const text = await navigator.clipboard.readText();
       if (text) {
@@ -41,6 +48,7 @@ export const PasteBar: React.FC<PasteBarProps> = ({ onAnalyze, onBatchAnalyze, i
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (onClearError) onClearError();
     const val = e.target.value;
     if (val.includes('\n')) {
       setIsBatchMode(true);

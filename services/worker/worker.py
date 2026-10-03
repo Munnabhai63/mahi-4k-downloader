@@ -147,6 +147,102 @@ def _get_server_cookie_file() -> Optional[str]:
         return SERVER_COOKIE_FILE
     return None
 
+PERMANENT_ERROR_PATTERNS = [
+    "private video",
+    "this video is private",
+    "members only",
+    "video unavailable",
+    "this video has been removed",
+    "is not available in your country",
+    "geographic restriction",
+    "geo-restricted",
+    "copyright claim",
+    "account has been terminated",
+    "drm",
+    "unsupported url",
+    "404",
+    "not found",
+    "does not exist",
+    "requested format not available"
+]
+
+def is_permanent_failure(err_str: str) -> bool:
+    """Identify permanent provider restrictions that should fail fast without retry."""
+    err_lower = err_str.lower()
+    return any(p in err_lower for p in PERMANENT_ERROR_PATTERNS)
+
+def _extract_with_fallback(
+    url: str,
+    base_opts: Dict[str, Any],
+    download: bool = False,
+    output_dir: Optional[str] = None,
+    download_id: Optional[str] = None
+) -> Any:
+    """
+    Controlled silent server-side fallback pipeline.
+    Attempts primary extraction, then alternate player clients or transient retries.
+    Permanent failures (private, deleted, geo-restricted) fail immediately without retrying.
+    """
+    platform = detect_platform(url)
+
+    # Alternate configurations for platforms with multi-client support
+    if platform == "youtube":
+        profiles = [
+            {"player_client": ["android", "ios", "web", "mweb"]},
+            {"player_client": ["ios"]},
+            {"player_client": ["android"]},
+            {"player_client": ["mweb"]},
+            {"player_client": ["tv_embedded"]},
+            {} # default yt-dlp behavior
+        ]
+    else:
+        profiles = [{}]
+
+    last_error: Optional[Exception] = None
+
+    for idx, profile in enumerate(profiles):
+        opts = base_opts.copy()
+        opts["extractor_args"] = base_opts.get("extractor_args", {}).copy()
+
+        if platform == "youtube":
+            if "player_client" in profile:
+                opts["extractor_args"]["youtube"] = {"player_client": profile["player_client"]}
+            else:
+                opts["extractor_args"] = {k: v for k, v in opts["extractor_args"].items() if k != "youtube"}
+
+        max_transient_attempts = 2 if idx == 0 else 1
+        for attempt in range(max_transient_attempts):
+            try:
+                with yt_dlp.YoutubeDL(opts) as ydl:
+                    info = ydl.extract_info(url, download=download)
+                    if info:
+                        return info
+            except Exception as exc:
+                last_error = exc
+                err_msg = str(exc)
+                if is_permanent_failure(err_msg):
+                    raise exc
+
+                # Clean any partial artifacts if download failed mid-way
+                if download and output_dir and download_id:
+                    try:
+                        for f in os.listdir(output_dir):
+                            if f.startswith(download_id):
+                                partial_f = os.path.join(output_dir, f)
+                                if os.path.isfile(partial_f):
+                                    os.unlink(partial_f)
+                    except Exception:
+                        pass
+
+                if attempt < max_transient_attempts - 1:
+                    time.sleep(0.3)
+                    continue
+                break
+
+    if last_error:
+        raise last_error
+    raise RuntimeError("Extraction failed on all supported fallback configurations.")
+
 def analyze_url(url: str, cookie_file: Optional[str] = None) -> Dict[str, Any]:
     if not YTDLP_AVAILABLE:
         raise RuntimeError("yt-dlp is not installed in the worker environment")
@@ -175,149 +271,148 @@ def analyze_url(url: str, cookie_file: Optional[str] = None) -> Dict[str, Any]:
     if active_cookie and os.path.isfile(active_cookie):
         ydl_opts["cookiefile"] = active_cookie
 
-    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-        info = ydl.extract_info(url, download=False)
-        if not info:
-            raise ValueError("No metadata returned by yt-dlp for the provided URL")
+    info = _extract_with_fallback(url, ydl_opts, download=False)
+    if not info:
+        raise ValueError("No metadata returned by yt-dlp for the provided URL")
 
-        # Handle playlist vs single video
-        is_playlist = info.get("_type") == "playlist" or "entries" in info
-        entries = info.get("entries", []) if is_playlist else [info]
-        first_entry = entries[0] if entries and len(entries) > 0 and entries[0] is not None else info
+    # Handle playlist vs single video
+    is_playlist = info.get("_type") == "playlist" or "entries" in info
+    entries = info.get("entries", []) if is_playlist else [info]
+    first_entry = entries[0] if entries and len(entries) > 0 and entries[0] is not None else info
 
-        title = first_entry.get("title") or info.get("title") or "Unknown Video"
-        thumbnail = first_entry.get("thumbnail") or info.get("thumbnail") or ""
-        duration = int(first_entry.get("duration") or info.get("duration") or 0)
-        uploader = first_entry.get("uploader") or info.get("uploader") or first_entry.get("channel") or "Unknown Creator"
-        view_count = first_entry.get("view_count") or info.get("view_count")
-        is_live = bool(first_entry.get("is_live") or info.get("is_live"))
+    title = first_entry.get("title") or info.get("title") or "Unknown Video"
+    thumbnail = first_entry.get("thumbnail") or info.get("thumbnail") or ""
+    duration = int(first_entry.get("duration") or info.get("duration") or 0)
+    uploader = first_entry.get("uploader") or info.get("uploader") or first_entry.get("channel") or "Unknown Creator"
+    view_count = first_entry.get("view_count") or info.get("view_count")
+    is_live = bool(first_entry.get("is_live") or info.get("is_live"))
 
-        # Formats and resolutions
-        formats = first_entry.get("formats", []) or []
-        available_heights = set()
-        has_audio = False
+    # Formats and resolutions
+    formats = first_entry.get("formats", []) or []
+    available_heights = set()
+    has_audio = False
 
-        total_duration = duration if duration > 0 else 180
+    total_duration = duration if duration > 0 else 180
 
-        # Scan formats for available heights and bitrates
-        height_to_format = {}
-        audio_formats = []
+    # Scan formats for available heights and bitrates
+    height_to_format = {}
+    audio_formats = []
 
-        for f in formats:
-            h = f.get("height")
-            if h:
-                available_heights.add(h)
-                if h not in height_to_format or (f.get("tbr") or 0) > (height_to_format[h].get("tbr") or 0):
-                    height_to_format[h] = f
-            if f.get("acodec") != "none" and f.get("vcodec") == "none":
-                has_audio = True
-                audio_formats.append(f)
-            elif f.get("acodec") != "none":
-                has_audio = True
+    for f in formats:
+        h = f.get("height")
+        if h:
+            available_heights.add(h)
+            if h not in height_to_format or (f.get("tbr") or 0) > (height_to_format[h].get("tbr") or 0):
+                height_to_format[h] = f
+        if f.get("acodec") != "none" and f.get("vcodec") == "none":
+            has_audio = True
+            audio_formats.append(f)
+        elif f.get("acodec") != "none":
+            has_audio = True
 
-        qualities_config = [
-            ("8K", 4320),
-            ("4K", 2160),
-            ("2K", 1440),
-            ("1080p", 1080),
-            ("720p", 720),
-            ("480p", 480),
-            ("360p", 360),
-            ("Audio", 0),
-        ]
+    qualities_config = [
+        ("8K", 4320),
+        ("4K", 2160),
+        ("2K", 1440),
+        ("1080p", 1080),
+        ("720p", 720),
+        ("480p", 480),
+        ("360p", 360),
+        ("Audio", 0),
+    ]
 
-        qualities = []
+    qualities = []
 
-        for label, h in qualities_config:
-            if label == "Audio":
-                qualities.append({
-                    "label": "Audio",
-                    "height": 0,
-                    "available": has_audio or len(formats) > 0,
-                    "estimatedBytes": int(total_duration * 320 * 1024 / 8),
-                    "formatNote": "MP3 / M4A / WAV up to 320kbps",
-                    "fps": 0
-                })
-            else:
-                is_avail = any(avail_h >= h * 0.95 for avail_h in available_heights)
-                if not available_heights and h <= 1080:
-                    is_avail = True
+    for label, h in qualities_config:
+        if label == "Audio":
+            qualities.append({
+                "label": "Audio",
+                "height": 0,
+                "available": has_audio or len(formats) > 0,
+                "estimatedBytes": int(total_duration * 320 * 1024 / 8),
+                "formatNote": "MP3 / M4A / WAV up to 320kbps",
+                "fps": 0
+            })
+        else:
+            is_avail = any(avail_h >= h * 0.95 for avail_h in available_heights)
+            if not available_heights and h <= 1080:
+                is_avail = True
 
-                # Estimate byte size
-                estimated_bytes = None
-                matched_format = height_to_format.get(h)
-                if matched_format:
-                    estimated_bytes = matched_format.get("filesize") or matched_format.get("filesize_approx")
-                    if not estimated_bytes and matched_format.get("tbr"):
-                        estimated_bytes = int(matched_format["tbr"] * 1000 / 8 * total_duration)
+            # Estimate byte size
+            estimated_bytes = None
+            matched_format = height_to_format.get(h)
+            if matched_format:
+                estimated_bytes = matched_format.get("filesize") or matched_format.get("filesize_approx")
+                if not estimated_bytes and matched_format.get("tbr"):
+                    estimated_bytes = int(matched_format["tbr"] * 1000 / 8 * total_duration)
 
-                if not estimated_bytes:
-                    bitrates = {4320: 35000, 2160: 16000, 1440: 8000, 1080: 4500, 720: 2500, 480: 1200, 360: 700}
-                    estimated_bytes = int(bitrates.get(h, 2000) * 1000 / 8 * total_duration)
+            if not estimated_bytes:
+                bitrates = {4320: 35000, 2160: 16000, 1440: 8000, 1080: 4500, 720: 2500, 480: 1200, 360: 700}
+                estimated_bytes = int(bitrates.get(h, 2000) * 1000 / 8 * total_duration)
 
-                qualities.append({
-                    "label": label,
-                    "height": h,
-                    "available": is_avail,
-                    "estimatedBytes": estimated_bytes,
-                    "formatNote": f"{h}p Ultra HD" if h >= 1440 else f"{h}p HD" if h >= 720 else f"{h}p SD",
-                    "fps": 60 if h >= 1080 else 30
-                })
-
-        # Subtitles extraction
-        raw_subs = first_entry.get("subtitles", {}) or {}
-        raw_auto_subs = first_entry.get("automatic_captions", {}) or {}
-        subtitles = []
-
-        for lang, tracks in raw_subs.items():
-            subtitles.append({
-                "language": tracks[0].get("name") or lang,
-                "code": lang,
-                "name": tracks[0].get("name") or lang,
-                "isAutoGenerated": False
+            qualities.append({
+                "label": label,
+                "height": h,
+                "available": is_avail,
+                "estimatedBytes": estimated_bytes,
+                "formatNote": f"{h}p Ultra HD" if h >= 1440 else f"{h}p HD" if h >= 720 else f"{h}p SD",
+                "fps": 60 if h >= 1080 else 30
             })
 
-        for lang, tracks in raw_auto_subs.items():
-            if not any(s["code"] == lang for s in subtitles):
-                subtitles.append({
-                    "language": tracks[0].get("name") or f"{lang} (Auto)",
-                    "code": lang,
-                    "name": tracks[0].get("name") or f"{lang} (Auto)",
-                    "isAutoGenerated": True
+    # Subtitles extraction
+    raw_subs = first_entry.get("subtitles", {}) or {}
+    raw_auto_subs = first_entry.get("automatic_captions", {}) or {}
+    subtitles = []
+
+    for lang, tracks in raw_subs.items():
+        subtitles.append({
+            "language": tracks[0].get("name") or lang,
+            "code": lang,
+            "name": tracks[0].get("name") or lang,
+            "isAutoGenerated": False
+        })
+
+    for lang, tracks in raw_auto_subs.items():
+        if not any(s["code"] == lang for s in subtitles):
+            subtitles.append({
+                "language": tracks[0].get("name") or f"{lang} (Auto)",
+                "code": lang,
+                "name": tracks[0].get("name") or f"{lang} (Auto)",
+                "isAutoGenerated": True
+            })
+
+    # Playlist items (up to 15 items preview)
+    playlist_items = []
+    if is_playlist:
+        for idx, item in enumerate(entries[:15]):
+            if item:
+                playlist_items.append({
+                    "id": str(item.get("id") or idx),
+                    "url": item.get("webpage_url") or item.get("url") or url,
+                    "title": item.get("title") or f"Item #{idx+1}",
+                    "thumbnailUrl": item.get("thumbnail") or thumbnail,
+                    "durationSec": int(item.get("duration") or 0)
                 })
 
-        # Playlist items (up to 15 items preview)
-        playlist_items = []
-        if is_playlist:
-            for idx, item in enumerate(entries[:15]):
-                if item:
-                    playlist_items.append({
-                        "id": str(item.get("id") or idx),
-                        "url": item.get("webpage_url") or item.get("url") or url,
-                        "title": item.get("title") or f"Item #{idx+1}",
-                        "thumbnailUrl": item.get("thumbnail") or thumbnail,
-                        "durationSec": int(item.get("duration") or 0)
-                    })
+    url_hash = hashlib.sha256(url.strip().encode("utf-8")).hexdigest()
+    platform = detect_platform(url, info.get("extractor_key"))
 
-        url_hash = hashlib.sha256(url.strip().encode("utf-8")).hexdigest()
-        platform = detect_platform(url, info.get("extractor_key"))
-
-        return {
-            "url": url,
-            "urlHash": url_hash,
-            "platform": platform,
-            "title": title,
-            "thumbnailUrl": thumbnail,
-            "durationSec": duration,
-            "uploader": uploader,
-            "viewCount": view_count,
-            "isLive": is_live,
-            "isPlaylist": is_playlist,
-            "playlistItems": playlist_items,
-            "qualities": qualities,
-            "formats": ["mp4", "mkv", "mp3", "m4a", "ogg", "wav", "srt"],
-            "subtitles": subtitles[:20]
-        }
+    return {
+        "url": url,
+        "urlHash": url_hash,
+        "platform": platform,
+        "title": title,
+        "thumbnailUrl": thumbnail,
+        "durationSec": duration,
+        "uploader": uploader,
+        "viewCount": view_count,
+        "isLive": is_live,
+        "isPlaylist": is_playlist,
+        "playlistItems": playlist_items,
+        "qualities": qualities,
+        "formats": ["mp4", "mkv", "mp3", "m4a", "ogg", "wav", "srt"],
+        "subtitles": subtitles[:20]
+    }
 
 def download_video(spec: Dict[str, Any]):
     url = spec.get("url")
@@ -447,35 +542,39 @@ def download_video(spec: Dict[str, Any]):
         ydl_opts["external_downloader_args"] = ["-x16", "-s16", "-k1M"]
 
     try:
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            extract_info = ydl.extract_info(url, download=True)
-            # Find the generated output file
-            final_path = None
-            total_size = 0
-            
-            # Check files in output directory starting with download_id
-            for f in os.listdir(output_dir):
-                if f.startswith(download_id):
-                    full_f = os.path.join(output_dir, f)
-                    if os.path.isfile(full_f):
-                        final_path = full_f
-                        total_size = os.path.getsize(full_f)
-                        break
+        extract_info = _extract_with_fallback(
+            url,
+            ydl_opts,
+            download=True,
+            output_dir=output_dir,
+            download_id=download_id
+        )
+        # Find the generated output file
+        final_path = None
+        total_size = 0
+        # Check files in output directory starting with download_id
+        for f in os.listdir(output_dir):
+            if f.startswith(download_id):
+                full_f = os.path.join(output_dir, f)
+                if os.path.isfile(full_f):
+                    final_path = full_f
+                    total_size = os.path.getsize(full_f)
+                    break
 
-            final_filename = os.path.basename(final_path) if final_path else f"{download_id}.{target_format}"
-            title = extract_info.get("title") if extract_info else download_id
+        final_filename = os.path.basename(final_path) if final_path else f"{download_id}.{target_format}"
+        title = extract_info.get("title") if extract_info else download_id
 
-            complete_payload = {
-                "type": "complete",
-                "downloadId": download_id,
-                "status": "COMPLETED",
-                "progress": 100.0,
-                "outputPath": final_path or "",
-                "filename": final_filename,
-                "title": title,
-                "totalBytes": total_size
-            }
-            print("__COMPLETE__:" + json.dumps(complete_payload), flush=True)
+        complete_payload = {
+            "type": "complete",
+            "downloadId": download_id,
+            "status": "COMPLETED",
+            "progress": 100.0,
+            "outputPath": final_path or "",
+            "filename": final_filename,
+            "title": title,
+            "totalBytes": total_size
+        }
+        print("__COMPLETE__:" + json.dumps(complete_payload), flush=True)
 
     except Exception as exc:
         # Strict Downloader-Only Mode: Clean up any partial/temporary download artifacts immediately on failure

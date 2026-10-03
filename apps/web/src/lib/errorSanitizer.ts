@@ -1,30 +1,33 @@
 /**
- * My 4K Downloader — User-Friendly Error Sanitizer
+ * My 4K Downloader — Silent, User-Friendly Error Sanitizer
  *
- * Ensures users NEVER see raw technical errors:
+ * Ensures users NEVER see raw technical errors or alarmist messages:
  * - No Python tracebacks
  * - No yt-dlp command-line dumps or GitHub wiki links
  * - No server file paths or database codes
- * - Clean, reassuring, human-first copy
+ * - Concise, compact, neutral status copy
  */
 
 export function sanitizeUserError(rawMsg: string | undefined | null): string {
   if (!rawMsg || typeof rawMsg !== 'string') {
-    return 'Unable to process this video. Please verify the link and try again.';
+    return 'Unable to download this link right now.';
   }
 
   const lower = rawMsg.toLowerCase();
 
-  // Platform bot/verification checks
+  // Platform bot/verification checks or provider restriction
   if (
     lower.includes('not a bot') ||
     lower.includes('sign in') ||
     lower.includes('login_required') ||
     lower.includes('cookies') ||
     lower.includes('confirm you') ||
-    lower.includes('bot verification')
+    lower.includes('bot verification') ||
+    lower.includes('direct download right now') ||
+    lower.includes('temporarily unavailable') ||
+    lower.includes('provider temporarily requires')
   ) {
-    return 'This video is not available for direct download right now. Please try another link.';
+    return 'Unable to download this link right now.';
   }
 
   // Private or restricted content
@@ -32,9 +35,10 @@ export function sanitizeUserError(rawMsg: string | undefined | null): string {
     lower.includes('private') ||
     lower.includes('members only') ||
     lower.includes('permission') ||
-    lower.includes('this video is private')
+    lower.includes('this video is private') ||
+    lower.includes('restricted by its author')
   ) {
-    return 'This video is private or restricted by its author on the source platform.';
+    return 'This video is private or restricted by its author.';
   }
 
   // Unavailable or deleted
@@ -46,7 +50,7 @@ export function sanitizeUserError(rawMsg: string | undefined | null): string {
     lower.includes('video is unavailable') ||
     lower.includes('404')
   ) {
-    return 'This video is unavailable or has been removed from the platform.';
+    return 'This video is unavailable or has been removed.';
   }
 
   // Geo-blocking
@@ -57,7 +61,7 @@ export function sanitizeUserError(rawMsg: string | undefined | null): string {
     lower.includes('region') ||
     lower.includes('not available in your')
   ) {
-    return 'This video is geographically restricted by the content creator.';
+    return 'This video is geographically restricted in the server region.';
   }
 
   // Unsupported URL or extractor failure
@@ -79,12 +83,12 @@ export function sanitizeUserError(rawMsg: string | undefined | null): string {
     lower.includes('failed to fetch') ||
     lower.includes('network error')
   ) {
-    return 'Network connection interrupted. Click retry to resume from the last byte.';
+    return 'This source is temporarily unavailable.';
   }
 
   // Format unavailable
   if (lower.includes('format unavailable') || lower.includes('requested format not available')) {
-    return 'The requested resolution or audio format is not available for this stream. Please choose another quality.';
+    return 'The requested resolution is not available for this stream.';
   }
 
   // Strip file paths, URLs, and code traces
@@ -102,10 +106,10 @@ export function sanitizeUserError(rawMsg: string | undefined | null): string {
     cleaned.includes('at async') ||
     cleaned.includes('at Object') ||
     cleaned.includes('node:') ||
-    cleaned.length > 120
+    cleaned.length > 80
   ) {
-    return 'Unable to process this video. Please verify the URL and try again.';
+    return 'Unable to download this link right now.';
   }
 
-  return cleaned || 'Download failed. Please try a different quality or verify the URL.';
+  return cleaned || 'Unable to download this link right now.';
 }

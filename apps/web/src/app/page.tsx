@@ -10,7 +10,6 @@ import {
   Globe, 
   Sparkles,
   ChevronDown,
-  AlertCircle,
   X,
   Loader2
 } from 'lucide-react';
@@ -421,21 +420,23 @@ export default function HomePage() {
           onAnalyze={handleAnalyze}
           onBatchAnalyze={handleBatchAnalyze}
           isLoading={isAnalyzing}
+          onClearError={() => setErrorMessage(null)}
         />
 
-        {/* Error Alert Box */}
+        {/* Compact Neutral Inline Status */}
         {errorMessage && (
-          <div className="w-full max-w-xl mx-auto mt-4 p-3.5 rounded-xl bg-red-50 border border-red-200 text-red-700 flex items-start justify-between gap-3 text-xs sm:text-sm animate-in fade-in">
-            <div className="flex items-start gap-2.5">
-              <AlertCircle className="w-4 h-4 text-[#EF4444] shrink-0 mt-0.5" />
-              <span className="font-medium text-left">{errorMessage}</span>
+          <div className="w-full max-w-xl mx-auto mt-2.5 px-3 py-1.5 flex items-center justify-between gap-2.5 rounded-lg bg-slate-50 border border-slate-200/80 text-xs text-slate-600 animate-in fade-in duration-200">
+            <div className="flex items-center gap-2 min-w-0">
+              <span className="w-1.5 h-1.5 rounded-full bg-slate-400 shrink-0" />
+              <span className="truncate">{errorMessage}</span>
             </div>
             <button
               type="button"
               onClick={() => setErrorMessage(null)}
-              className="text-red-500 hover:text-red-800 p-0.5 shrink-0"
+              className="text-slate-400 hover:text-slate-600 p-0.5 rounded transition-colors shrink-0"
+              title="Dismiss"
             >
-              <X className="w-4 h-4" />
+              <X className="w-3.5 h-3.5" />
             </button>
           </div>
         )}
