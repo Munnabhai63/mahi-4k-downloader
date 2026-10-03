@@ -24,7 +24,7 @@ import {
   VideoQualityLabel, 
   VideoFormat 
 } from '@turbograb/types';
-import { getApiBaseUrl } from '@/lib/api';
+import { getApiBaseUrl, executeApiRequest } from '@/lib/api';
 import { sanitizeUserError } from '@/lib/errorSanitizer';
 
 export default function HomePage() {
@@ -35,7 +35,6 @@ export default function HomePage() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [activeDownloads, setActiveDownloads] = useState<DownloadItem[]>([]);
   const [isStartingDownload, setIsStartingDownload] = useState<boolean>(false);
-  const [userRole, setUserRole] = useState<string>('student');
   const [lastAttemptedUrl, setLastAttemptedUrl] = useState<string>('');
 
   const [dynamicConfig, setDynamicConfig] = useState<{
@@ -54,8 +53,8 @@ export default function HomePage() {
     creatorName: 'My 4K Downloader',
     announcementNotice: 'Official My 4K Downloader',
     announcementBanner: { enabled: false, message: '', level: 'info' },
-    studentDailyLimit: 50,
-    freeDailyLimit: 15,
+    studentDailyLimit: 99999,
+    freeDailyLimit: 99999,
   });
 
   const getApiUrl = () => {
@@ -63,16 +62,6 @@ export default function HomePage() {
   };
 
   React.useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const stored = localStorage.getItem('turbograb_user');
-      if (stored) {
-        try {
-          const parsed = JSON.parse(stored);
-          if (parsed.planId) setUserRole(parsed.planId);
-        } catch {}
-      }
-    }
-
     fetch(`${getApiUrl()}/admin/public-config`)
       .then((res) => (res.ok ? res.json() : null))
       .then((cfg) => {
@@ -97,7 +86,7 @@ export default function HomePage() {
     setLastAttemptedUrl(url);
 
     try {
-      const res = await fetch(`${getApiUrl()}/analyze`, {
+      const res = await executeApiRequest('/analyze', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ url }),
@@ -142,7 +131,7 @@ export default function HomePage() {
     setBatchResults([]);
 
     try {
-      const res = await fetch(`${getApiUrl()}/analyze/batch`, {
+      const res = await executeApiRequest('/analyze/batch', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ urls }),
@@ -172,7 +161,7 @@ export default function HomePage() {
     format: VideoFormat = 'mp4',
     subtitleLang?: string,
   ) => {
-    const res = await fetch(`${getApiUrl()}/downloads`, {
+    const res = await executeApiRequest('/downloads', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -210,7 +199,7 @@ export default function HomePage() {
         format: 'mp4' as VideoFormat,
       }));
 
-      const res = await fetch(`${getApiUrl()}/downloads/batch`, {
+      const res = await executeApiRequest('/downloads/batch', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ items }),
@@ -259,7 +248,7 @@ export default function HomePage() {
 
   const handleCancelDownload = async (id: string) => {
     try {
-      await fetch(`${getApiUrl()}/downloads/${id}/cancel`, { method: 'POST' });
+      await executeApiRequest(`/downloads/${id}/cancel`, { method: 'POST' });
       setActiveDownloads((prev) =>
         prev.map((it) => (it.id === id ? { ...it, status: 'CANCELLED' } : it)),
       );
@@ -268,7 +257,7 @@ export default function HomePage() {
 
   const handleRetryDownload = async (id: string) => {
     try {
-      const res = await fetch(`${getApiUrl()}/downloads/${id}/retry`, { method: 'POST' });
+      const res = await executeApiRequest(`/downloads/${id}/retry`, { method: 'POST' });
       if (res.ok) {
         const updated = await res.json();
         setActiveDownloads((prev) =>
@@ -336,7 +325,7 @@ export default function HomePage() {
     },
     {
       q: 'Is My 4K Downloader free to use?',
-      a: 'Yes, My 4K Downloader is completely free with no subscriptions, paid tiers, or hidden fees. Standard users receive 50 high-speed daily downloads with zero intrusive advertisements.',
+      a: 'Yes, My 4K Downloader is 100% free with no subscriptions, paid tiers, or registration required. You get unlimited high-speed 4K and MP3 downloads with zero intrusive advertisements.',
     },
     {
       q: 'How do I download 4K videos using My 4K Downloader?',
@@ -370,11 +359,10 @@ export default function HomePage() {
 
       {/* Hero Section */}
       <section className="w-full pt-10 pb-4 px-4 sm:px-6 lg:px-8 max-w-4xl mx-auto text-center">
-        {/* Student Tier & Quota Indicator */}
-        <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-[#F0FDF4] border border-[#DCFCE7] text-xs font-semibold text-[#16A34A] mb-4 shadow-xs">
-          <span>{userRole === 'admin' ? '⚡ Super Admin' : '🎓 Student Access'}</span>
-          <span className="text-[#CBD5E1]">•</span>
-          <span>{userRole === 'admin' ? 'Unlimited Downloads' : `${dynamicConfig.studentDailyLimit} Daily Downloads`}</span>
+        {/* 100% Free Unlimited Indicator */}
+        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#F0FDF4] border border-[#86EFAC]/60 text-xs font-bold text-[#16A34A] mb-4 shadow-2xs">
+          <span className="w-2 h-2 rounded-full bg-[#16A34A] animate-pulse" />
+          <span>⚡ 100% Free • Unlimited 4K Downloads • No Sign-in Needed</span>
         </div>
 
         <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black tracking-tight text-[#0F172A] mb-2 leading-tight font-poppins">
@@ -384,7 +372,7 @@ export default function HomePage() {
           Free 4K Video Downloader
         </p>
         <p className="text-xs sm:text-sm text-[#64748B] max-w-lg mx-auto mb-8 font-medium">
-          Fast, ad-free downloads in 4K UHD, 1080p, and MP3 audio from YouTube, Instagram, TikTok, and 1,000+ sites.
+          Fast, ad-free downloads in 4K UHD, 1080p, and MP3 audio from YouTube, Facebook, Instagram, TikTok, WhatsApp, and 1,000+ sites.
         </p>
 
         {/* Paste Bar */}
@@ -395,28 +383,28 @@ export default function HomePage() {
           onClearError={() => setErrorMessage(null)}
         />
 
-        {/* Compact Neutral Inline Status with Desktop Bridge CTA */}
+        {/* Inline Error & Quick Retry */}
         {errorMessage && (
-          <div className="w-full max-w-xl mx-auto mt-2.5 px-3 py-2 flex flex-col sm:flex-row items-center justify-between gap-2.5 rounded-xl bg-slate-50 border border-slate-200/90 text-xs text-slate-700 animate-in fade-in duration-200 shadow-2xs">
+          <div className="w-full max-w-xl mx-auto mt-2.5 px-3.5 py-2.5 flex flex-col sm:flex-row items-center justify-between gap-2.5 rounded-xl bg-red-50/80 border border-red-200/90 text-xs text-red-800 animate-in fade-in duration-200 shadow-2xs">
             <div className="flex items-center gap-2 min-w-0">
-              <span className="w-2 h-2 rounded-full bg-slate-400 shrink-0" />
-              <span className="truncate font-medium">{errorMessage}</span>
+              <span className="w-2 h-2 rounded-full bg-red-500 shrink-0" />
+              <span className="font-medium text-left">{errorMessage}</span>
             </div>
             <div className="flex items-center gap-2 shrink-0">
               {lastAttemptedUrl && (
-                <a
-                  href={`m4k://download?url=${encodeURIComponent(lastAttemptedUrl)}`}
-                  className="px-2.5 py-1 bg-[#16A34A] hover:bg-[#15803D] text-white text-[11px] font-bold rounded-lg transition-colors flex items-center gap-1 shadow-xs cursor-pointer"
-                  title="Open link in My 4K Downloader Desktop App"
+                <button
+                  type="button"
+                  onClick={() => handleAnalyze(lastAttemptedUrl)}
+                  className="px-3 py-1 bg-[#16A34A] hover:bg-[#15803D] text-white text-[11px] font-bold rounded-lg transition-colors flex items-center gap-1 shadow-xs cursor-pointer"
+                  title="Retry analyzing this video URL"
                 >
-                  <span>⚡</span>
-                  <span>Download with Desktop App</span>
-                </a>
+                  <span>🔄 Retry</span>
+                </button>
               )}
               <button
                 type="button"
                 onClick={() => setErrorMessage(null)}
-                className="text-slate-400 hover:text-slate-600 p-1 rounded transition-colors"
+                className="text-red-400 hover:text-red-700 p-1 rounded transition-colors cursor-pointer"
                 title="Dismiss"
               >
                 <X className="w-3.5 h-3.5" />

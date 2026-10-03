@@ -11,6 +11,12 @@ interface PasteBarProps {
   onClearError?: () => void;
 }
 
+export function extractUrlFromText(text: string): string {
+  if (!text) return '';
+  const match = text.match(/https?:\/\/[^\s"'<>]+/i);
+  return match ? match[0] : text.trim();
+}
+
 export const PasteBar: React.FC<PasteBarProps> = ({
   onAnalyze,
   onBatchAnalyze,
@@ -28,15 +34,16 @@ export const PasteBar: React.FC<PasteBarProps> = ({
       const text = await navigator.clipboard.readText();
       if (text) {
         const trimmed = text.trim();
-        const lines = trimmed.split('\n').map((l) => l.trim()).filter((l) => l.startsWith('http'));
+        const cleanSingle = extractUrlFromText(trimmed);
+        const lines = trimmed.split('\n').map((l) => extractUrlFromText(l.trim())).filter((l) => l.startsWith('http'));
         if (lines.length > 1) {
           setIsBatchMode(true);
-          setBatchText(trimmed);
+          setBatchText(lines.join('\n'));
         } else {
           if (isBatchMode) {
-            setBatchText((prev) => (prev ? `${prev}\n${trimmed}` : trimmed));
+            setBatchText((prev) => (prev ? `${prev}\n${cleanSingle}` : cleanSingle));
           } else {
-            setUrl(trimmed);
+            setUrl(cleanSingle || trimmed);
           }
         }
         setCopiedNotification(true);
@@ -64,22 +71,23 @@ export const PasteBar: React.FC<PasteBarProps> = ({
     if (isBatchMode) {
       const urls = batchText
         .split('\n')
-        .map((u) => u.trim())
+        .map((u) => extractUrlFromText(u.trim()))
         .filter((u) => u.startsWith('http://') || u.startsWith('https://'));
 
       if (urls.length > 0 && onBatchAnalyze) {
         onBatchAnalyze(urls);
       }
     } else {
-      if (url.trim() && onAnalyze) {
-        onAnalyze(url.trim(), false);
+      const clean = extractUrlFromText(url);
+      if (clean && onAnalyze) {
+        onAnalyze(clean, false);
       }
     }
   };
 
   const batchCount = batchText
     .split('\n')
-    .map((u) => u.trim())
+    .map((u) => extractUrlFromText(u.trim()))
     .filter((u) => u.startsWith('http://') || u.startsWith('https://')).length;
 
   return (
@@ -94,10 +102,11 @@ export const PasteBar: React.FC<PasteBarProps> = ({
               <div className="flex items-center flex-1 min-w-0 px-2 py-1">
                 <Sparkles className="w-5 h-5 text-[#16A34A] shrink-0 mr-2.5" />
                 <input
-                  type="url"
+                  type="text"
+                  inputMode="url"
                   value={url}
                   onChange={handleInputChange}
-                  placeholder="Paste YouTube, Instagram, TikTok or media link..."
+                  placeholder="Paste YouTube, Facebook, Instagram, TikTok or WhatsApp shared link..."
                   className="w-full bg-transparent py-2 text-sm sm:text-base text-[#0F172A] placeholder-[#94A3B8] focus:outline-none font-medium truncate"
                   required
                   aria-label="Video or media URL"
@@ -122,7 +131,7 @@ export const PasteBar: React.FC<PasteBarProps> = ({
                 type="submit"
                 variant="primary"
                 disabled={isLoading || !url.trim()}
-                className="w-full sm:w-auto rounded-xl sm:rounded-full px-7 py-3.5 font-bold text-sm shrink-0 flex items-center justify-center gap-2 bg-[#16A34A] hover:bg-[#15803D] active:scale-[0.98] text-white shadow-md shadow-[#16A34A]/25 transition-transform"
+                className="w-full sm:w-auto rounded-xl sm:rounded-full px-7 py-3.5 font-bold text-sm shrink-0 flex items-center justify-center gap-2 bg-[#16A34A] hover:bg-[#15803D] active:scale-[0.98] text-white shadow-md shadow-[#16A34A]/25 transition-transform cursor-pointer"
               >
                 {isLoading ? (
                   <>

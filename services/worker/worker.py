@@ -12,6 +12,7 @@ import shutil
 import hashlib
 import time
 import subprocess
+import re
 from typing import Dict, Any, List, Optional, Tuple
 
 try:
@@ -24,12 +25,25 @@ except ImportError:
     YTDLP_VERSION = None
 
 try:
+    from yt_dlp.networking.impersonate import ImpersonateTarget
+    HAVE_IMPERSONATE = True
+except Exception:
+    HAVE_IMPERSONATE = False
+
+try:
     import yt_dlp_ejs
     EJS_INSTALLED = True
     EJS_VERSION = getattr(yt_dlp_ejs, "__version__", "0.8.0")
 except ImportError:
     EJS_INSTALLED = False
     EJS_VERSION = "none"
+
+def extract_clean_url(raw_url: str) -> str:
+    """Extract clean HTTP/HTTPS URL from any input or chat message (e.g. WhatsApp, SMS)."""
+    if not raw_url:
+        return ""
+    m = re.search(r'https?://[^\s"\'<>]+', raw_url)
+    return m.group(0) if m else raw_url.strip()
 
 def check_environment() -> Dict[str, Any]:
     """Inspect worker dependencies, CLI tools, and runtime capability."""
@@ -51,6 +65,8 @@ def check_environment() -> Dict[str, Any]:
 
 def detect_platform(url: str, extractor_key: Optional[str] = None) -> str:
     url_lower = url.lower()
+    if "whatsapp.com" in url_lower or "wa.me" in url_lower:
+        return "whatsapp"
     if "youtube.com" in url_lower or "youtu.be" in url_lower:
         return "youtube"
     if "instagram.com" in url_lower:
@@ -162,21 +178,83 @@ PERMANENT_ERROR_PATTERNS = [
     "unsupported url",
     "404",
     "not found",
-    "does not exist",
-    "requested format not available",
-    "sign in to confirm you’re not a bot",
-    "sign in to confirm you're not a bot",
-    "botguard",
-    "login_required",
-    "requires authentication",
-    "checkpoint_required",
-    "login required"
+    "does not exist"
 ]
 
 def is_permanent_failure(err_str: str) -> bool:
-    """Identify permanent provider restrictions that should fail fast without retry."""
+    """Identify permanent provider restrictions that cannot be bypassed by client switching."""
     err_lower = err_str.lower()
     return any(p in err_lower for p in PERMANENT_ERROR_PATTERNS)
+
+def _fallback_tiktok_extract(url: str) -> Optional[Dict[str, Any]]:
+    """Fallback extractor for TikTok using TikWM API when yt-dlp encounters bot protection."""
+    try:
+        import urllib.request
+        import urllib.parse
+        clean_u = extract_clean_url(url)
+        api_endpoint = f"https://www.tikwm.com/api/?url={urllib.parse.quote(clean_u)}"
+        req = urllib.request.Request(api_endpoint, headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"})
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+            if data.get("code") == 0 and "data" in data:
+                d = data["data"]
+                title = d.get("title") or "TikTok Video"
+                thumbnail = d.get("cover") or d.get("origin_cover") or ""
+                duration = int(d.get("duration") or 0)
+                uploader = d.get("author", {}).get("nickname") or "TikTok Creator"
+                play_url = d.get("play") or d.get("wmplay")
+                music_url = d.get("music")
+                url_hash = hashlib.sha256(clean_u.strip().encode("utf-8")).hexdigest()
+
+                qualities = [
+                    {
+                        "label": "1080p",
+                        "height": 1080,
+                        "available": True,
+                        "estimatedBytes": int(d.get("size") or (duration * 2500 * 1024 / 8)),
+                        "formatNote": "HD No Watermark (Direct MP4)",
+                        "fps": 30,
+                        "directUrl": play_url
+                    },
+                    {
+                        "label": "720p",
+                        "height": 720,
+                        "available": True,
+                        "estimatedBytes": int(d.get("size") or (duration * 1500 * 1024 / 8)),
+                        "formatNote": "720p Clean Video",
+                        "fps": 30,
+                        "directUrl": play_url
+                    },
+                    {
+                        "label": "Audio",
+                        "height": 0,
+                        "available": bool(music_url),
+                        "estimatedBytes": int(duration * 320 * 1024 / 8) if duration else 5000000,
+                        "formatNote": "Original Audio (MP3)",
+                        "fps": 0,
+                        "directUrl": music_url
+                    }
+                ]
+                return {
+                    "url": clean_u,
+                    "urlHash": url_hash,
+                    "platform": "tiktok",
+                    "title": title,
+                    "thumbnailUrl": thumbnail,
+                    "durationSec": duration,
+                    "uploader": uploader,
+                    "viewCount": d.get("play_count"),
+                    "isLive": False,
+                    "isPlaylist": False,
+                    "playlistItems": [],
+                    "qualities": qualities,
+                    "formats": ["mp4", "mp3"],
+                    "subtitles": [],
+                    "directDownloadUrl": play_url
+                }
+    except Exception:
+        pass
+    return None
 
 def _extract_with_fallback(
     url: str,
@@ -187,22 +265,18 @@ def _extract_with_fallback(
 ) -> Any:
     """
     Controlled silent server-side fallback pipeline.
-    Attempts primary extraction, then alternate player clients or transient retries.
-    Permanent failures (private, deleted, geo-restricted, bot challenge) fail immediately without retrying.
+    Attempts android, tv_embedded, mweb, and desktop profiles in sequence.
     """
     platform = detect_platform(url)
 
-    # For fast analyze calls (download=False): execute single fast pass, do not loop through 6 client profiles
-    if not download:
-        profiles = [{"player_client": ["android", "ios", "web", "mweb"]}] if platform == "youtube" else [{}]
-    elif platform == "youtube":
+    if platform == "youtube":
         profiles = [
-            {"player_client": ["android", "ios", "web", "mweb"]},
-            {"player_client": ["ios"]},
+            {},  # yt-dlp default player client cascade (visionos, web) - delivers full 1080p/4K
+            {"player_client": ["android_vr", "android"]},
             {"player_client": ["android"]},
             {"player_client": ["mweb"]},
-            {"player_client": ["tv_embedded"]},
-            {} # default yt-dlp behavior
+            {"player_client": ["web_creator"]},
+            {"player_client": ["ios"]},
         ]
     else:
         profiles = [{}]
@@ -219,7 +293,7 @@ def _extract_with_fallback(
             else:
                 opts["extractor_args"] = {k: v for k, v in opts["extractor_args"].items() if k != "youtube"}
 
-        max_transient_attempts = 1 if not download else (2 if idx == 0 else 1)
+        max_transient_attempts = 1 if not download else 2
         for attempt in range(max_transient_attempts):
             try:
                 with yt_dlp.YoutubeDL(opts) as ydl:
@@ -229,7 +303,8 @@ def _extract_with_fallback(
             except Exception as exc:
                 last_error = exc
                 err_msg = str(exc)
-                if is_permanent_failure(err_msg):
+                # Only fail fast if truly permanent AND we're on the last profile
+                if is_permanent_failure(err_msg) and idx == len(profiles) - 1:
                     raise exc
 
                 # Clean any partial artifacts if download failed mid-way
@@ -256,19 +331,25 @@ def analyze_url(url: str, cookie_file: Optional[str] = None) -> Dict[str, Any]:
     if not YTDLP_AVAILABLE:
         raise RuntimeError("yt-dlp is not installed in the worker environment")
 
+    clean_url = extract_clean_url(url)
+    platform = detect_platform(clean_url)
+
     ydl_opts: Dict[str, Any] = {
         "quiet": True,
         "no_warnings": True,
         "skip_download": True,
         "extract_flat": "in_playlist",
-        "socket_timeout": 5,
+        "socket_timeout": 15,
         "extractor_args": {
-            "youtube": {
-                "player_client": ["android", "ios", "web", "mweb"]
-            },
             "tiktok": {"api_hostname": ["api22-core-c-useast1a.tiktokv.com"]}
         }
     }
+
+    if HAVE_IMPERSONATE:
+        try:
+            ydl_opts["impersonate"] = ImpersonateTarget.from_str("chrome")
+        except Exception:
+            pass
 
     js_runtime, _ = _get_js_runtime()
     if js_runtime:
@@ -281,8 +362,21 @@ def analyze_url(url: str, cookie_file: Optional[str] = None) -> Dict[str, Any]:
     if active_cookie and os.path.isfile(active_cookie):
         ydl_opts["cookiefile"] = active_cookie
 
-    info = _extract_with_fallback(url, ydl_opts, download=False)
+    info = None
+    try:
+        info = _extract_with_fallback(clean_url, ydl_opts, download=False)
+    except Exception as exc:
+        if platform == "tiktok":
+            fallback = _fallback_tiktok_extract(clean_url)
+            if fallback:
+                return fallback
+        raise exc
+
     if not info:
+        if platform == "tiktok":
+            fallback = _fallback_tiktok_extract(clean_url)
+            if fallback:
+                return fallback
         raise ValueError("No metadata returned by yt-dlp for the provided URL")
 
     # Handle playlist vs single video
@@ -425,7 +519,8 @@ def analyze_url(url: str, cookie_file: Optional[str] = None) -> Dict[str, Any]:
     }
 
 def download_video(spec: Dict[str, Any]):
-    url = spec.get("url")
+    url = extract_clean_url(spec.get("url"))
+    platform = detect_platform(url)
     download_id = spec.get("downloadId") or spec.get("id") or str(int(time.time()))
     quality = spec.get("quality", "1080p")
     target_format = spec.get("format", "mp4").lower()
@@ -507,12 +602,15 @@ def download_video(spec: Dict[str, Any]):
         "no_warnings": True,
         "progress_hooks": [progress_hook],
         "extractor_args": {
-            "youtube": {
-                "player_client": ["android", "ios", "web", "mweb"]
-            },
             "tiktok": {"api_hostname": ["api22-core-c-useast1a.tiktokv.com"]}
         }
     }
+
+    if HAVE_IMPERSONATE:
+        try:
+            ydl_opts["impersonate"] = ImpersonateTarget.from_str("chrome")
+        except Exception:
+            pass
 
     js_runtime, _ = _get_js_runtime()
     if js_runtime:

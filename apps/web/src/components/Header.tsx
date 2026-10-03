@@ -8,8 +8,6 @@ import {
   History,
   Download,
   Settings,
-  User,
-  LogOut,
   Globe,
   Menu,
   X,
@@ -19,19 +17,11 @@ import { translations, Locale } from '@/lib/i18n';
 
 export const Header: React.FC = () => {
   const pathname = usePathname();
-  const [userEmail, setUserEmail] = useState<string | null>(null);
   const [lang, setLang] = useState<Locale>('EN');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      const stored = localStorage.getItem('turbograb_user');
-      if (stored) {
-        try {
-          const parsed = JSON.parse(stored);
-          setUserEmail(parsed.email || null);
-        } catch {}
-      }
       const savedLang = localStorage.getItem('turbograb_lang') as Locale;
       if (savedLang && (savedLang === 'EN' || savedLang === 'HI')) setLang(savedLang);
     }
@@ -44,13 +34,6 @@ export const Header: React.FC = () => {
       localStorage.setItem('turbograb_lang', next);
       window.dispatchEvent(new Event('turbograb_lang_change'));
     }
-  };
-
-  const handleLogout = () => {
-    localStorage.removeItem('turbograb_token');
-    localStorage.removeItem('turbograb_user');
-    setUserEmail(null);
-    window.location.reload();
   };
 
   const t = translations[lang] || translations.EN;
@@ -119,35 +102,16 @@ export const Header: React.FC = () => {
             <span>{lang}</span>
           </button>
 
-          {userEmail ? (
-            <div className="hidden sm:flex items-center gap-2">
-              <div className="flex items-center gap-1.5 px-3 py-1 bg-[#F0FDF4] border border-[#16A34A]/20 rounded-full text-xs font-semibold text-[#16A34A]">
-                <User className="w-3.5 h-3.5" />
-                <span className="max-w-[100px] truncate">{userEmail}</span>
-              </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleLogout}
-                className="text-xs text-[#64748B] hover:text-red-600 px-2"
-                title="Sign Out"
-              >
-                <LogOut className="w-4 h-4" />
-              </Button>
-            </div>
-          ) : (
-            <Link href="/login" className="hidden sm:block">
-              <Button variant="ghost" size="sm" className="text-xs font-semibold px-3">
-                {t.nav.signIn}
-              </Button>
-            </Link>
-          )}
+          <div className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1 bg-[#F0FDF4] border border-[#86EFAC]/50 text-xs font-bold text-[#16A34A] rounded-full">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#16A34A] animate-pulse" />
+            <span>{lang === 'HI' ? '100% मुफ़्त • कोई लॉगिन नहीं' : '100% Free • No Sign-in'}</span>
+          </div>
 
           <Link href="/#paste-bar" className="hidden sm:inline-flex">
             <Button
               variant="primary"
               size="sm"
-              className="rounded-full px-4 text-xs font-bold bg-[#16A34A] hover:bg-[#15803D] text-white shadow-xs"
+              className="rounded-full px-4 text-xs font-bold bg-[#16A34A] hover:bg-[#15803D] text-white shadow-xs cursor-pointer"
             >
               {t.nav.newGrab}
             </Button>
@@ -191,32 +155,11 @@ export const Header: React.FC = () => {
           </div>
 
           <div className="pt-2 border-t border-[#F1F5F9] flex flex-col gap-2">
-
-            {userEmail ? (
-              <div className="flex items-center justify-between px-3 py-2 bg-[#F0FDF4] rounded-xl text-xs">
-                <span className="font-semibold text-[#16A34A] truncate">{userEmail}</span>
-                <button
-                  type="button"
-                  onClick={handleLogout}
-                  className="text-xs font-bold text-red-600 hover:underline"
-                >
-                  Sign Out
-                </button>
-              </div>
-            ) : (
-              <div className="grid grid-cols-2 gap-2 pt-1">
-                <Link href="/login" onClick={() => setMobileMenuOpen(false)}>
-                  <Button variant="outline" size="sm" className="w-full text-xs">
-                    {t.nav.signIn}
-                  </Button>
-                </Link>
-                <Link href="/#paste-bar" onClick={() => setMobileMenuOpen(false)}>
-                  <Button variant="primary" size="sm" className="w-full text-xs bg-[#16A34A] text-white">
-                    {t.nav.newGrab}
-                  </Button>
-                </Link>
-              </div>
-            )}
+            <Link href="/#paste-bar" onClick={() => setMobileMenuOpen(false)}>
+              <Button variant="primary" size="sm" className="w-full text-xs font-bold bg-[#16A34A] text-white">
+                {t.nav.newGrab} (100% Free)
+              </Button>
+            </Link>
           </div>
         </div>
       )}

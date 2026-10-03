@@ -4,6 +4,7 @@ export type SupportedPlatform =
   | 'facebook'
   | 'twitter'
   | 'tiktok'
+  | 'whatsapp'
   | 'vimeo'
   | 'dailymotion'
   | 'twitch'

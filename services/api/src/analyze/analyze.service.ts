@@ -58,10 +58,17 @@ export class AnalyzeService {
     this.pythonCommand = process.env.PYTHON_PATH || 'python';
   }
 
+  extractUrl(rawInput: string): string {
+    if (!rawInput) return '';
+    const match = rawInput.match(/https?:\/\/[^\s"'<>]+/i);
+    return match ? match[0] : rawInput.trim();
+  }
+
   async validateUrlSecurity(rawUrl: string): Promise<URL> {
+    const cleanUrl = this.extractUrl(rawUrl);
     let parsed: URL;
     try {
-      parsed = new URL(rawUrl.trim());
+      parsed = new URL(cleanUrl);
     } catch {
       throw new BadRequestException('Unsupported link.');
     }
@@ -74,7 +81,7 @@ export class AnalyzeService {
 
     // DRM Platform Blocker (Strict §3 requirement)
     const isDrmBlocked = DRM_BLOCKED_DOMAINS.some(
-      (domain) => hostname === domain || hostname.endsWith('.' + domain) || rawUrl.toLowerCase().includes(domain),
+      (domain) => hostname === domain || hostname.endsWith('.' + domain) || cleanUrl.toLowerCase().includes(domain),
     );
 
     if (isDrmBlocked) {
@@ -115,6 +122,7 @@ export class AnalyzeService {
 
   detectPlatform(url: string): SupportedPlatform {
     const l = url.toLowerCase();
+    if (l.includes('whatsapp.com') || l.includes('wa.me')) return 'whatsapp';
     if (l.includes('youtube.com') || l.includes('youtu.be')) return 'youtube';
     if (l.includes('instagram.com')) return 'instagram';
     if (l.includes('facebook.com') || l.includes('fb.watch')) return 'facebook';
@@ -132,9 +140,10 @@ export class AnalyzeService {
   }
 
   async analyze(url: string): Promise<AnalyzeResult> {
-    await this.validateUrlSecurity(url);
+    const cleanUrl = this.extractUrl(url);
+    await this.validateUrlSecurity(cleanUrl);
 
-    const normalizedUrl = url.trim();
+    const normalizedUrl = cleanUrl.trim();
     const cached = this.metadataCache.get(normalizedUrl);
     if (cached && Date.now() - cached.timestamp < this.CACHE_TTL_MS) {
       return cached.result;
@@ -158,28 +167,20 @@ export class AnalyzeService {
 
       const timer = setTimeout(() => {
         child.kill();
-        reject(new BadRequestException('URL analysis timed out. Please try our Desktop App for faster download.'));
-      }, 6000);
+        reject(new BadRequestException('URL analysis timed out. Please try again.'));
+      }, 30000);
 
       child.on('close', (code) => {
         clearTimeout(timer);
 
         if (code !== 0) {
           const rawErr = stderrData || stdoutData || 'Failed to extract video information.';
-          console.error(`[Worker Extraction Error] URL: ${url}`, rawErr);
+          console.error(`[Worker Extraction Error] URL: ${cleanUrl}`, rawErr);
 
           const lowerErr = rawErr.toLowerCase();
           let userSafeMsg = 'Unable to download this link right now.';
 
-          if (
-            lowerErr.includes('sign in to confirm') ||
-            lowerErr.includes('bot') ||
-            lowerErr.includes('login') ||
-            lowerErr.includes('checkpoint') ||
-            lowerErr.includes('cookies')
-          ) {
-            userSafeMsg = 'This video requires residential access. Please download with the free Desktop App.';
-          } else if (lowerErr.includes('private video') || lowerErr.includes('this video is private') || lowerErr.includes('only works when logged-in')) {
+          if (lowerErr.includes('private video') || lowerErr.includes('this video is private') || lowerErr.includes('only works when logged-in')) {
             userSafeMsg = 'This video is private or restricted by its author.';
           } else if (lowerErr.includes('video unavailable') || lowerErr.includes('does not exist') || lowerErr.includes('not found') || lowerErr.includes('404')) {
             userSafeMsg = 'This video is unavailable or has been removed.';
@@ -192,9 +193,9 @@ export class AnalyzeService {
           ) {
             userSafeMsg = 'Unsupported link.';
           } else if (lowerErr.includes('timeout') || lowerErr.includes('timed out') || lowerErr.includes('connection reset') || lowerErr.includes('network')) {
-            userSafeMsg = 'Analysis timed out. Please use the Desktop App for faster download.';
+            userSafeMsg = 'Analysis timed out. Please check your connection and try again.';
           } else {
-            userSafeMsg = 'Unable to download this link right now.';
+            userSafeMsg = 'Unable to process this video link right now. Please try again.';
           }
 
           return reject(new BadRequestException(userSafeMsg));

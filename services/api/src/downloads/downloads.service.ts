@@ -120,15 +120,17 @@ export class DownloadsService {
   }
 
   async createDownload(dto: CreateDownloadRequest, userId: string = 'anon-guest'): Promise<DownloadItem> {
-    await this.analyzeService.validateUrlSecurity(dto.url);
+    const cleanUrl = this.analyzeService.extractUrl(dto.url);
+    await this.analyzeService.validateUrlSecurity(cleanUrl);
+    dto.url = cleanUrl;
 
-    // Free disk space guard: prevent filling host disk if free space is under 2GB
+    // Free disk space guard: prevent filling host disk if free space is under 50MB
     try {
       if (fs.existsSync(this.tempStoragePath)) {
         const stats = (fs as any).statfsSync(this.tempStoragePath);
         if (stats && stats.bfree && stats.bsize) {
           const freeBytes = Number(stats.bfree) * Number(stats.bsize);
-          const MIN_FREE_DISK_BYTES = 2 * 1024 * 1024 * 1024; // 2 GB minimum free disk threshold
+          const MIN_FREE_DISK_BYTES = 50 * 1024 * 1024; // 50 MB minimum free disk threshold
           if (freeBytes < MIN_FREE_DISK_BYTES) {
             this.logger.error(`[Storage Guard] Free disk space critically low: ${(freeBytes / (1024 * 1024)).toFixed(1)}MB. Rejecting new job.`);
             throw new ServiceUnavailableException(

@@ -11,8 +11,8 @@ export const PlatformRow: React.FC<PlatformRowProps> = ({ onSelectPlatform }) =>
     {
       id: 'youtube',
       name: 'YouTube',
-      badge: 'Desktop 4K / Web Basic',
-      sampleUrl: 'https://www.youtube.com/watch?v=aqz-KE-bpKQ',
+      badge: '4K & MP3 Direct',
+      sampleUrl: 'https://www.youtube.com/watch?v=nLKKoMptkOk',
       glowShadow: '0 12px 28px -4px rgba(255, 0, 0, 0.5), 0 0 20px rgba(255, 0, 0, 0.35)',
       activeBorder: 'hover:border-red-500/60',
       badgeBg: 'bg-red-50 text-red-600 border-red-200',
@@ -47,7 +47,7 @@ export const PlatformRow: React.FC<PlatformRowProps> = ({ onSelectPlatform }) =>
     {
       id: 'facebook',
       name: 'Facebook',
-      badge: '1080p HD (Verified Web)',
+      badge: '1080p HD Direct',
       sampleUrl: 'https://www.facebook.com/watch?v=10153231379946729',
       glowShadow: '0 12px 28px -4px rgba(24, 119, 242, 0.5), 0 0 20px rgba(24, 119, 242, 0.35)',
       activeBorder: 'hover:border-blue-500/60',
@@ -77,34 +77,35 @@ export const PlatformRow: React.FC<PlatformRowProps> = ({ onSelectPlatform }) =>
       ),
     },
     {
-      id: 'openweb',
-      name: 'Open Media / MP4',
-      badge: '100% Verified Web',
-      sampleUrl: 'https://archive.org/details/BigBuckBunny_124',
-      glowShadow: '0 12px 28px -4px rgba(16, 185, 129, 0.5), 0 0 20px rgba(16, 185, 129, 0.35)',
+      id: 'whatsapp',
+      name: 'WhatsApp',
+      badge: 'Auto-Detect Video',
+      sampleUrl: 'https://youtu.be/nLKKoMptkOk',
+      glowShadow: '0 12px 28px -4px rgba(37, 211, 102, 0.5), 0 0 20px rgba(37, 211, 102, 0.35)',
       activeBorder: 'hover:border-emerald-500/60',
       badgeBg: 'bg-emerald-50 text-emerald-600 border-emerald-200',
       icon: (
         <svg viewBox="0 0 64 64" className="w-12 h-12 transition-transform duration-300 group-hover:scale-110" fill="none" xmlns="http://www.w3.org/2000/svg">
           <defs>
-            <radialGradient id="open-green" cx="40%" cy="30%" r="70%">
-              <stop offset="0%" stopColor="#34D399" />
-              <stop offset="60%" stopColor="#10B981" />
-              <stop offset="100%" stopColor="#047857" />
+            <radialGradient id="wa-green" cx="40%" cy="30%" r="70%">
+              <stop offset="0%" stopColor="#4ADE80" />
+              <stop offset="60%" stopColor="#25D366" />
+              <stop offset="100%" stopColor="#128C7E" />
             </radialGradient>
-            <filter id="open-3d-shadow" x="-20%" y="-20%" width="140%" height="150%">
+            <filter id="wa-3d-shadow" x="-20%" y="-20%" width="140%" height="150%">
               <feDropShadow dx="0" dy="4" stdDeviation="3" floodColor="#000000" floodOpacity="0.35" />
             </filter>
           </defs>
-          <circle cx="32" cy="32" r="25" fill="url(#open-green)" filter="url(#open-3d-shadow)" />
-          <path d="M 26 21 L 44 32 L 26 43 Z" fill="#FFFFFF" filter="drop-shadow(0 2px 3px rgba(0,0,0,0.35))" />
+          <circle cx="32" cy="32" r="25" fill="url(#wa-green)" filter="url(#wa-3d-shadow)" />
+          <path d="M 21 43 L 23.5 35 C 22.2 33 21.6 30.5 21.6 28 C 21.6 22.2 26.2 17.6 32 17.6 C 34.8 17.6 37.4 18.7 39.4 20.6 C 41.3 22.6 42.4 25.2 42.4 28 C 42.4 33.8 37.8 38.4 32 38.4 C 29.6 38.4 27.3 37.8 25.3 36.8 L 21 43 Z" fill="#FFFFFF" opacity="0.95" />
+          <path d="M 28 24.5 C 27.6 23.6 27.1 23.6 26.7 23.6 C 26.4 23.6 26 23.6 25.7 23.9 C 25.3 24.3 24.3 25.2 24.3 27.2 C 24.3 29.2 25.8 31.1 26 31.4 C 26.2 31.6 28.9 35.8 33 37.6 C 36.4 39 37.1 38.8 37.8 38.7 C 38.9 38.6 40.2 37.8 40.5 36.9 C 40.8 36 40.8 35.2 40.7 35.1 C 40.6 34.9 40.3 34.8 39.8 34.6 C 39.3 34.3 36.9 33.1 36.5 32.9 C 36.1 32.8 35.8 32.7 35.5 33.2 C 35.2 33.6 34.4 34.6 34.1 34.9 C 33.9 35.2 33.6 35.3 33.1 35 C 32.6 34.8 31.1 34.3 29.3 32.7 C 27.9 31.5 27 30 26.7 29.5 C 26.5 29.1 26.7 28.8 26.9 28.6 C 27.1 28.4 27.4 28.1 27.6 27.8 C 27.8 27.5 27.9 27.3 28.1 27 C 28.2 26.7 28.2 26.4 28.1 26.2 C 28 26 27.4 24.7 27.2 24.1 Z" fill="#128C7E" />
         </svg>
       ),
     },
     {
       id: 'instagram',
       name: 'Instagram',
-      badge: 'Desktop App Preferred',
+      badge: 'Reels & Posts HD',
       sampleUrl: 'https://www.instagram.com/reel/C8t1M2UvQ6-/',
       glowShadow: '0 12px 28px -4px rgba(225, 48, 108, 0.5), 0 0 20px rgba(250, 126, 30, 0.35)',
       activeBorder: 'hover:border-pink-500/60',
@@ -140,7 +141,7 @@ export const PlatformRow: React.FC<PlatformRowProps> = ({ onSelectPlatform }) =>
     {
       id: 'tiktok',
       name: 'TikTok',
-      badge: 'Desktop App Preferred',
+      badge: 'No Watermark HD',
       sampleUrl: 'https://www.tiktok.com/@tiktok/video/7106594312292453678',
       glowShadow: '0 12px 28px -4px rgba(0, 242, 254, 0.5), 0 0 20px rgba(254, 9, 121, 0.4)',
       activeBorder: 'hover:border-cyan-400/60',
@@ -179,7 +180,7 @@ export const PlatformRow: React.FC<PlatformRowProps> = ({ onSelectPlatform }) =>
     {
       id: 'x',
       name: 'X (Twitter)',
-      badge: 'Desktop App Preferred',
+      badge: '1080p Direct',
       sampleUrl: 'https://x.com/Twitter/status/1274062719266185217',
       glowShadow: '0 12px 28px -4px rgba(255, 255, 255, 0.4), 0 0 20px rgba(148, 163, 184, 0.4)',
       activeBorder: 'hover:border-slate-500/60',
