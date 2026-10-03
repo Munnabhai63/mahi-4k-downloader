@@ -1,5 +1,6 @@
-import { Controller, Post, Body, BadRequestException, HttpCode, HttpStatus } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiProperty } from '@nestjs/swagger';
+import { Controller, Post, Get, Body, Query, Res, BadRequestException, HttpCode, HttpStatus } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiProperty, ApiQuery } from '@nestjs/swagger';
+import type { Response } from 'express';
 import { AnalyzeService } from './analyze.service';
 import { AnalyzeResult } from '@turbograb/types';
 
@@ -34,6 +35,21 @@ export class AnalyzeController {
       throw new BadRequestException('A valid "url" string field is required.');
     }
     return this.analyzeService.analyze(body.url);
+  }
+
+  @Get('thumbnail-proxy')
+  @ApiOperation({ summary: 'Stream video thumbnail image with CORS and cache headers' })
+  @ApiQuery({ name: 'url', required: true, description: 'Original image URL' })
+  @ApiQuery({ name: 'download', required: false, description: 'Set to 1 to force file download' })
+  async proxyThumbnail(
+    @Query('url') imageUrl: string,
+    @Query('download') download: string,
+    @Res() res: Response,
+  ) {
+    if (!imageUrl) {
+      throw new BadRequestException('Query parameter "url" is required.');
+    }
+    return this.analyzeService.proxyThumbnail(imageUrl, download === '1', res);
   }
 
   @Post('batch')

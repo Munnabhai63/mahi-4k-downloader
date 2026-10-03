@@ -1,18 +1,8 @@
-// TurboGrab PWA Service Worker
-const CACHE_NAME = 'turbograb-cache-v1';
-const ASSETS_TO_CACHE = [
-  '/',
-  '/manifest.json',
-  '/terms',
-  '/privacy',
-];
+// TurboGrab PWA Service Worker - v2 (Network First Strategy)
+const CACHE_NAME = 'turbograb-cache-v2';
 
 self.addEventListener('install', (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(ASSETS_TO_CACHE);
-    }).then(() => self.skipWaiting())
-  );
+  self.skipWaiting();
 });
 
 self.addEventListener('activate', (event) => {
@@ -32,27 +22,33 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
 
-  // Exclude API requests and WebSocket upgrades from static cache
+  // In localhost or development, do not intercept or cache
+  if (url.hostname === 'localhost' || url.hostname === '127.0.0.1') {
+    return;
+  }
+
+  // Exclude API requests, downloads, and WebSocket upgrades from static cache
   if (url.pathname.startsWith('/api') || url.pathname.startsWith('/socket.io')) {
     return;
   }
 
+  // Network first strategy
   event.respondWith(
-    caches.match(event.request).then((cached) => {
-      return (
-        cached ||
-        fetch(event.request).then((response) => {
-          if (response.status === 200 && event.request.method === 'GET') {
-            const clone = response.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
+    fetch(event.request)
+      .then((response) => {
+        if (response.status === 200 && event.request.method === 'GET') {
+          const clone = response.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
+        }
+        return response;
+      })
+      .catch(() => {
+        return caches.match(event.request).then((cached) => {
+          if (cached) return cached;
+          if (event.request.mode === 'navigate') {
+            return caches.match('/');
           }
-          return response;
-        })
-      );
-    }).catch(() => {
-      if (event.request.mode === 'navigate') {
-        return caches.match('/');
-      }
-    })
+        });
+      })
   );
 });

@@ -241,6 +241,9 @@ def _fallback_tiktok_extract(url: str) -> Optional[Dict[str, Any]]:
                     "platform": "tiktok",
                     "title": title,
                     "thumbnailUrl": thumbnail,
+                    "thumbnailHdUrl": d.get("origin_cover") or thumbnail,
+                    "description": d.get("title") or "",
+                    "tags": [],
                     "durationSec": duration,
                     "uploader": uploader,
                     "viewCount": d.get("play_count"),
@@ -498,6 +501,33 @@ def analyze_url(url: str, cookie_file: Optional[str] = None) -> Dict[str, Any]:
                     "durationSec": int(item.get("duration") or 0)
                 })
 
+    video_id = str(first_entry.get("id") or info.get("id") or "").strip()
+    raw_desc = first_entry.get("description") or info.get("description") or ""
+    description = str(raw_desc).strip()
+    raw_tags = first_entry.get("tags") or info.get("tags") or []
+    tags = [str(t).strip() for t in raw_tags if t] if isinstance(raw_tags, list) else []
+
+    best_thumbnail = thumbnail
+    all_thumbs = first_entry.get("thumbnails") or info.get("thumbnails") or []
+    if all_thumbs:
+        sorted_thumbs = sorted(
+            [t for t in all_thumbs if isinstance(t, dict) and t.get("url")],
+            key=lambda x: (x.get("width") or 0) * (x.get("height") or 0) + (x.get("preference") or 0),
+            reverse=True
+        )
+        if sorted_thumbs:
+            best_thumbnail = sorted_thumbs[0].get("url") or thumbnail
+
+    # For YouTube, guarantee maxresdefault.jpg or hqdefault.jpg as high-compatibility thumbnail
+    if platform == "youtube" and video_id:
+        thumbnail_hd = f"https://i.ytimg.com/vi/{video_id}/maxresdefault.jpg"
+        if not thumbnail or "vi_webp" in thumbnail:
+            thumbnail = thumbnail_hd
+        if not best_thumbnail or "vi_webp" in best_thumbnail:
+            best_thumbnail = thumbnail_hd
+    elif not best_thumbnail:
+        best_thumbnail = thumbnail
+
     url_hash = hashlib.sha256(url.strip().encode("utf-8")).hexdigest()
     platform = detect_platform(url, info.get("extractor_key"))
 
@@ -507,6 +537,9 @@ def analyze_url(url: str, cookie_file: Optional[str] = None) -> Dict[str, Any]:
         "platform": platform,
         "title": title,
         "thumbnailUrl": thumbnail,
+        "thumbnailHdUrl": best_thumbnail,
+        "description": description,
+        "tags": tags,
         "durationSec": duration,
         "uploader": uploader,
         "viewCount": view_count,

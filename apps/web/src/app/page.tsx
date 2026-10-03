@@ -476,6 +476,7 @@ export default function HomePage() {
                       src={item.thumbnailUrl}
                       alt={item.title}
                       className="w-14 h-9 object-cover rounded-lg shrink-0 bg-slate-100"
+                      referrerPolicy="no-referrer"
                     />
                     <div className="min-w-0">
                       <div className="text-xs font-bold text-[#0F172A] truncate">

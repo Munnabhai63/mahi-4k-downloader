@@ -2,6 +2,7 @@ import { Injectable, BadRequestException, InternalServerErrorException } from '@
 import { spawn } from 'child_process';
 import * as dns from 'dns/promises';
 import * as path from 'path';
+import type { Response } from 'express';
 import { AnalyzeResult, SupportedPlatform } from '@turbograb/types';
 
 const DRM_BLOCKED_DOMAINS = [
@@ -325,5 +326,44 @@ export class AnalyzeService {
         reject(new InternalServerErrorException(`Could not launch batch worker: ${err.message}`));
       });
     });
+  }
+
+  async proxyThumbnail(imageUrl: string, forceDownload: boolean, res: Response): Promise<void> {
+    try {
+      const cleanUrl = this.extractUrl(imageUrl);
+      await this.validateUrlSecurity(cleanUrl);
+
+      const upstream = await fetch(cleanUrl, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+          'Accept': 'image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8',
+        },
+      });
+
+      if (!upstream.ok) {
+        throw new BadRequestException(`Failed to fetch thumbnail from source (status ${upstream.status})`);
+      }
+
+      const contentType = upstream.headers.get('content-type') || 'image/jpeg';
+      const arrayBuffer = await upstream.arrayBuffer();
+      const buffer = Buffer.from(arrayBuffer);
+
+      res.setHeader('Content-Type', contentType);
+      res.setHeader('Content-Length', buffer.length.toString());
+      res.setHeader('Cache-Control', 'public, max-age=86400, s-maxage=86400');
+      res.setHeader('Access-Control-Allow-Origin', '*');
+
+      if (forceDownload) {
+        const ext = contentType.includes('png') ? 'png' : contentType.includes('webp') ? 'webp' : 'jpg';
+        res.setHeader('Content-Disposition', `attachment; filename="thumbnail.${ext}"`);
+      } else {
+        res.setHeader('Content-Disposition', 'inline');
+      }
+
+      res.end(buffer);
+    } catch (err: any) {
+      if (err instanceof BadRequestException) throw err;
+      throw new BadRequestException(`Unable to load thumbnail: ${err.message}`);
+    }
   }
 }

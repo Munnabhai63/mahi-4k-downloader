@@ -71,6 +71,9 @@ export interface AnalyzeResult {
   platform: SupportedPlatform;
   title: string;
   thumbnailUrl: string;
+  thumbnailHdUrl?: string;
+  description?: string;
+  tags?: string[];
   durationSec: number;
   uploader: string;
   viewCount?: number;

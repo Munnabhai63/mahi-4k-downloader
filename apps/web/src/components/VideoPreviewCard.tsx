@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Download,
   X,
@@ -9,6 +9,12 @@ import {
   ChevronDown,
   ChevronUp,
   Loader2,
+  Image as ImageIcon,
+  FileText,
+  Check,
+  Copy,
+  Tag,
+  Sparkles,
 } from 'lucide-react';
 import { Button, Card } from '@turbograb/ui';
 import {
@@ -17,6 +23,7 @@ import {
   VideoFormat,
   QualityOption,
 } from '@turbograb/types';
+import { getApiBaseUrl } from '@/lib/api';
 
 interface VideoPreviewCardProps {
   data: AnalyzeResult;
@@ -46,6 +53,68 @@ export const VideoPreviewCard: React.FC<VideoPreviewCardProps> = ({
   const [selectedFormat, setSelectedFormat] = useState<VideoFormat>('mp4');
   const [selectedSubtitle, setSelectedSubtitle] = useState<string>('');
   const [showAdvanced, setShowAdvanced] = useState<boolean>(false);
+
+  // Preference persistence for Thumbnail & Metadata options
+  const [includeThumbnail, setIncludeThumbnail] = useState<boolean>(false);
+  const [includeMetadata, setIncludeMetadata] = useState<boolean>(false);
+  const [showMetadataDrawer, setShowMetadataDrawer] = useState<boolean>(false);
+  const [copiedField, setCopiedField] = useState<string | null>(null);
+  const [isSavingThumbnail, setIsSavingThumbnail] = useState<boolean>(false);
+  const [isSavingMetadata, setIsSavingMetadata] = useState<boolean>(false);
+
+  // Robust resilient image loading with smart proxy and resolution fallbacks
+  const [imgSrc, setImgSrc] = useState<string>(data.thumbnailHdUrl || data.thumbnailUrl || '');
+  const [fallbackStep, setFallbackStep] = useState<number>(0);
+
+  useEffect(() => {
+    setImgSrc(data.thumbnailHdUrl || data.thumbnailUrl || '');
+    setFallbackStep(0);
+  }, [data.thumbnailHdUrl, data.thumbnailUrl, data.url]);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const savedThumb = localStorage.getItem('m4k_pref_include_thumb');
+      const savedMeta = localStorage.getItem('m4k_pref_include_meta');
+      if (savedThumb !== null) setIncludeThumbnail(savedThumb === 'true');
+      if (savedMeta !== null) setIncludeMetadata(savedMeta === 'true');
+    }
+  }, []);
+
+  const handleToggleIncludeThumbnail = () => {
+    const next = !includeThumbnail;
+    setIncludeThumbnail(next);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('m4k_pref_include_thumb', String(next));
+    }
+  };
+
+  const handleToggleIncludeMetadata = () => {
+    const next = !includeMetadata;
+    setIncludeMetadata(next);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('m4k_pref_include_meta', String(next));
+    }
+  };
+
+  const handleImageError = () => {
+    if (fallbackStep === 0 && data.thumbnailUrl && data.thumbnailUrl !== imgSrc) {
+      setFallbackStep(1);
+      setImgSrc(data.thumbnailUrl);
+    } else if (fallbackStep <= 1 && data.url && data.platform === 'youtube') {
+      setFallbackStep(2);
+      const match = data.url.match(/(?:v=|\/|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
+      if (match && match[1]) {
+        setImgSrc(`https://i.ytimg.com/vi/${match[1]}/hqdefault.jpg`);
+        return;
+      }
+      setImgSrc(`${getApiBaseUrl()}/analyze/thumbnail-proxy?url=${encodeURIComponent(data.thumbnailUrl)}`);
+    } else if (fallbackStep <= 2 && data.thumbnailUrl) {
+      setFallbackStep(3);
+      setImgSrc(`${getApiBaseUrl()}/analyze/thumbnail-proxy?url=${encodeURIComponent(data.thumbnailUrl)}`);
+    } else {
+      setFallbackStep(4);
+    }
+  };
 
   const formatDuration = (seconds: number) => {
     if (!seconds) return '';
@@ -99,7 +168,102 @@ export const VideoPreviewCard: React.FC<VideoPreviewCardProps> = ({
     }
   };
 
+  const getSafeTitle = () => {
+    return (data.title || 'video')
+      .replace(/[^a-zA-Z0-9_\u0900-\u097F\s-]/g, '')
+      .trim()
+      .replace(/\s+/g, '_')
+      .substring(0, 50) || 'media';
+  };
+
+  const handleDownloadThumbnailDirect = (e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    setIsSavingThumbnail(true);
+    try {
+      const targetImg = data.thumbnailHdUrl || data.thumbnailUrl;
+      const proxyUrl = `${getApiBaseUrl()}/analyze/thumbnail-proxy?url=${encodeURIComponent(targetImg)}&download=1`;
+      const a = document.createElement('a');
+      a.href = proxyUrl;
+      a.download = `${getSafeTitle()}-thumbnail.jpg`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    } catch (err) {
+      console.error('Failed to trigger thumbnail download:', err);
+    } finally {
+      setTimeout(() => setIsSavingThumbnail(false), 1000);
+    }
+  };
+
+  const generateMetadataText = () => {
+    const lines = [
+      `============================================================`,
+      `MY 4K DOWNLOADER - MEDIA INFO & METADATA`,
+      `============================================================`,
+      `TITLE: ${data.title}`,
+      `CHANNEL / CREATOR: ${data.uploader || 'N/A'}`,
+      `PLATFORM: ${data.platform ? data.platform.toUpperCase() : 'UNKNOWN'}`,
+      `DURATION: ${formatDuration(data.durationSec) || 'N/A'}`,
+      `VIEWS: ${data.viewCount ? data.viewCount.toLocaleString() : 'N/A'}`,
+      `ORIGINAL URL: ${data.url}`,
+      `EXTRACTED AT: ${new Date().toLocaleString()}`,
+      `============================================================`,
+      data.tags && data.tags.length > 0
+        ? `\nTAGS & KEYWORDS (${data.tags.length}):\n${data.tags.join(', ')}\n`
+        : '',
+      data.description
+        ? `\nDESCRIPTION:\n${data.description}\n`
+        : '',
+      `============================================================`,
+      `Generated by My 4K Downloader • Free, Unlimited 4K Video Downloader`,
+    ];
+    return lines.filter(Boolean).join('\n');
+  };
+
+  const handleDownloadMetadataDirect = (e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    setIsSavingMetadata(true);
+    try {
+      const content = generateMetadataText();
+      const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+      const blobUrl = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = blobUrl;
+      a.download = `${getSafeTitle()}-metadata.txt`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(blobUrl);
+    } catch (err) {
+      console.error('Failed to save metadata file:', err);
+    } finally {
+      setTimeout(() => setIsSavingMetadata(false), 1000);
+    }
+  };
+
+  const handleCopyTags = (e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    if (!data.tags || data.tags.length === 0) return;
+    navigator.clipboard.writeText(data.tags.join(', '));
+    setCopiedField('tags');
+    setTimeout(() => setCopiedField(null), 2000);
+  };
+
+  const handleCopyDescription = (e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    if (!data.description) return;
+    navigator.clipboard.writeText(data.description);
+    setCopiedField('desc');
+    setTimeout(() => setCopiedField(null), 2000);
+  };
+
   const handleDownloadClick = () => {
+    if (includeThumbnail) {
+      handleDownloadThumbnailDirect();
+    }
+    if (includeMetadata) {
+      handleDownloadMetadataDirect();
+    }
     onDownload({
       quality: selectedQuality,
       format: selectedFormat,
@@ -110,65 +274,209 @@ export const VideoPreviewCard: React.FC<VideoPreviewCardProps> = ({
 
   const displayQualities = data.qualities.filter((q) => q.available);
   const currentOption = data.qualities.find((q) => q.label === selectedQuality);
+  const tagCount = data.tags?.length || 0;
+  const hasDetails = tagCount > 0 || Boolean(data.description);
 
   return (
     <div className="w-full max-w-xl mx-auto my-6 px-2 sm:px-0 animate-in fade-in slide-in-from-bottom-3 duration-200">
       <Card className="overflow-hidden border border-[#E2E8F0] shadow-[0_12px_40px_rgba(15,23,42,0.08)] p-0 bg-white rounded-2xl">
-        {/* Top Header: Video Info */}
+        {/* Top Header: Video Info & Thumbnail */}
         <div className="p-4 sm:p-5 border-b border-[#F1F5F9] relative bg-gradient-to-b from-white to-[#F8FAF9]/50">
           <button
             type="button"
             onClick={onCancel}
-            className="absolute top-4 right-4 text-[#94A3B8] hover:text-[#0F172A] p-1.5 rounded-full hover:bg-slate-100 transition-colors"
+            className="absolute top-4 right-4 text-[#94A3B8] hover:text-[#0F172A] p-1.5 rounded-full hover:bg-slate-100 transition-colors cursor-pointer"
             title="Close"
           >
             <X className="w-4 h-4" />
           </button>
 
-          <div className="flex items-start gap-3.5 pr-8">
-            <div className="relative w-24 h-16 sm:w-28 sm:h-18 rounded-xl overflow-hidden bg-slate-100 shrink-0 border border-[#E2E8F0] shadow-xs">
-              {data.thumbnailUrl ? (
+          <div className="flex flex-col sm:flex-row items-start gap-4 pr-6">
+            {/* Visual Thumbnail Frame */}
+            <div className="relative w-full sm:w-36 h-28 sm:h-24 rounded-xl overflow-hidden bg-slate-900 shrink-0 border border-[#E2E8F0] shadow-sm group">
+              {fallbackStep < 4 && imgSrc ? (
                 <img
-                  src={data.thumbnailUrl}
+                  src={imgSrc}
                   alt={data.title}
-                  className="w-full h-full object-cover"
-                  crossOrigin="anonymous"
-                  loading="lazy"
+                  className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                  referrerPolicy="no-referrer"
+                  onError={handleImageError}
+                  loading="eager"
                 />
               ) : (
-                <div className="w-full h-full flex items-center justify-center text-slate-400">
-                  <FileVideo className="w-6 h-6" />
+                <div className="w-full h-full flex flex-col items-center justify-center text-slate-400 bg-slate-800 p-2 text-center">
+                  <FileVideo className="w-6 h-6 mb-1 text-slate-500" />
+                  <span className="text-[10px] text-slate-400 font-medium">Video Preview</span>
                 </div>
               )}
+
               {data.durationSec > 0 && (
-                <span className="absolute bottom-1 right-1 bg-black/80 text-white text-[10px] font-bold px-1.5 py-0.5 rounded backdrop-blur-xs">
+                <span className="absolute bottom-1.5 right-1.5 bg-black/85 text-white text-[10px] font-bold px-1.5 py-0.5 rounded backdrop-blur-xs shadow-xs">
                   {formatDuration(data.durationSec)}
                 </span>
               )}
+
+              {/* Direct Quick Thumbnail Download Overlay Icon */}
+              <button
+                type="button"
+                onClick={handleDownloadThumbnailDirect}
+                title="Download HD Thumbnail image directly"
+                className="absolute top-1.5 left-1.5 p-1 bg-black/70 hover:bg-[#16A34A] text-white rounded-md opacity-90 hover:opacity-100 transition-all cursor-pointer backdrop-blur-xs flex items-center gap-1 text-[10px] font-bold px-1.5"
+              >
+                <ImageIcon className="w-3 h-3" />
+                <span className="hidden xs:inline">HD</span>
+              </button>
             </div>
 
+            {/* Video Details */}
             <div className="min-w-0 flex-1">
-              <h3 className="text-sm sm:text-base font-bold text-[#0F172A] leading-snug line-clamp-2">
+              <h3 className="text-sm sm:text-base font-bold text-[#0F172A] leading-snug line-clamp-2" title={data.title}>
                 {data.title}
               </h3>
-              <div className="mt-1.5 flex items-center gap-2 text-xs text-[#64748B]">
+
+              <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-[#64748B]">
                 {data.uploader && (
-                  <span className="truncate max-w-[150px] font-medium text-[#475569]">
+                  <span className="truncate max-w-[170px] font-semibold text-[#475569]">
                     {data.uploader}
                   </span>
                 )}
                 {data.platform && (
-                  <span className="bg-[#F1F5F9] text-[#16A34A] border border-[#DCFCE7] px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide">
+                  <span className="bg-[#F0FDF4] text-[#16A34A] border border-[#DCFCE7] px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide">
                     {data.platform}
                   </span>
+                )}
+                {tagCount > 0 && (
+                  <span className="bg-slate-100 text-slate-700 px-2 py-0.5 rounded-full text-[10px] font-semibold">
+                    {tagCount} tags
+                  </span>
+                )}
+              </div>
+
+              {/* Quick Actions Bar */}
+              <div className="mt-3 flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handleDownloadThumbnailDirect}
+                  disabled={isSavingThumbnail}
+                  className="inline-flex items-center gap-1 px-2.5 py-1 bg-white hover:bg-[#F0FDF4] border border-[#E2E8F0] hover:border-[#86EFAC] text-[#16A34A] rounded-lg text-[11px] font-bold shadow-2xs transition-colors cursor-pointer"
+                  title="Download High-Res Thumbnail Image"
+                >
+                  <ImageIcon className="w-3.5 h-3.5" />
+                  <span>{isSavingThumbnail ? 'Saving...' : 'Save HD Thumbnail'}</span>
+                </button>
+
+                {hasDetails && (
+                  <button
+                    type="button"
+                    onClick={() => setShowMetadataDrawer(!showMetadataDrawer)}
+                    className="inline-flex items-center gap-1 px-2.5 py-1 bg-white hover:bg-slate-50 border border-[#E2E8F0] hover:border-slate-300 text-slate-700 rounded-lg text-[11px] font-bold shadow-2xs transition-colors cursor-pointer"
+                    title="View Tags, Title, and Description"
+                  >
+                    <Tag className="w-3.5 h-3.5 text-slate-500" />
+                    <span>Tags & Description</span>
+                    <ChevronDown className={`w-3 h-3 transition-transform ${showMetadataDrawer ? 'rotate-180' : ''}`} />
+                  </button>
                 )}
               </div>
             </div>
           </div>
+
+          {/* Expandable Tags & Description Drawer */}
+          {showMetadataDrawer && hasDetails && (
+            <div className="mt-3.5 pt-3.5 border-t border-[#E2E8F0] bg-[#F8FAF9] -mx-4 -mb-4 sm:-mx-5 sm:-mb-5 p-4 rounded-b-2xl animate-in fade-in duration-150 space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1.5 text-xs font-bold text-[#0F172A]">
+                  <FileText className="w-4 h-4 text-[#16A34A]" />
+                  <span>Video Details & Keywords</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={handleDownloadMetadataDirect}
+                    disabled={isSavingMetadata}
+                    className="px-2.5 py-1 bg-[#16A34A] hover:bg-[#15803D] text-white text-[11px] font-bold rounded-md transition-colors flex items-center gap-1 cursor-pointer"
+                    title="Download Title, Tags and Description as .txt"
+                  >
+                    <Download className="w-3 h-3" />
+                    <span>{isSavingMetadata ? 'Saving...' : 'Download .TXT'}</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Tags Section */}
+              {tagCount > 0 && (
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-[#64748B]">
+                      Tags ({tagCount})
+                    </span>
+                    <button
+                      type="button"
+                      onClick={handleCopyTags}
+                      className="text-[11px] text-[#16A34A] hover:underline font-bold flex items-center gap-1 cursor-pointer"
+                    >
+                      {copiedField === 'tags' ? (
+                        <>
+                          <Check className="w-3 h-3" />
+                          <span>Copied All Tags!</span>
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="w-3 h-3" />
+                          <span>Copy All Tags</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                  <div className="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto p-2 bg-white rounded-lg border border-[#E2E8F0]">
+                    {data.tags!.map((t, idx) => (
+                      <span
+                        key={idx}
+                        className="px-2 py-0.5 bg-[#F1F5F9] hover:bg-[#DCFCE7] text-slate-700 hover:text-[#16A34A] rounded-md text-[10px] font-medium transition-colors"
+                      >
+                        #{t}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Description Section */}
+              {data.description && (
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-[#64748B]">
+                      Description
+                    </span>
+                    <button
+                      type="button"
+                      onClick={handleCopyDescription}
+                      className="text-[11px] text-[#16A34A] hover:underline font-bold flex items-center gap-1 cursor-pointer"
+                    >
+                      {copiedField === 'desc' ? (
+                        <>
+                          <Check className="w-3 h-3" />
+                          <span>Copied!</span>
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="w-3 h-3" />
+                          <span>Copy Description</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                  <p className="text-xs text-slate-600 bg-white p-2.5 rounded-lg border border-[#E2E8F0] max-h-28 overflow-y-auto whitespace-pre-wrap leading-relaxed font-sans">
+                    {data.description}
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Quality Options Section */}
-        <div className="p-4 sm:p-5 space-y-2.5">
+        <div className="p-4 sm:p-5 space-y-3">
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold uppercase tracking-wider text-[#64748B]">
               Choose Quality & Format
@@ -244,28 +552,85 @@ export const VideoPreviewCard: React.FC<VideoPreviewCardProps> = ({
             })}
           </div>
 
-          {/* More options accordion */}
-          <div className="pt-2">
+          {/* Download Extras & Preferences Section */}
+          <div className="mt-3 p-3 bg-[#F8FAF9] rounded-xl border border-[#E2E8F0] space-y-2.5">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-[#475569] flex items-center gap-1.5">
+                <Sparkles className="w-3.5 h-3.5 text-[#16A34A]" />
+                <span>Automatic Extras (Saved Preferences)</span>
+              </span>
+              <span className="text-[10px] text-[#94A3B8]">Remembered</span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {/* Option 1: Also Download Thumbnail */}
+              <label
+                onClick={handleToggleIncludeThumbnail}
+                className={`flex items-center gap-2.5 p-2 rounded-lg border text-xs font-semibold cursor-pointer transition-colors ${
+                  includeThumbnail
+                    ? 'bg-[#F0FDF4] border-[#86EFAC] text-[#16A34A]'
+                    : 'bg-white border-[#E2E8F0] text-[#64748B] hover:border-slate-300'
+                }`}
+              >
+                <div
+                  className={`w-4 h-4 rounded flex items-center justify-center shrink-0 border ${
+                    includeThumbnail ? 'bg-[#16A34A] border-[#16A34A] text-white' : 'border-[#CBD5E1] bg-white'
+                  }`}
+                >
+                  {includeThumbnail && <Check className="w-3 h-3 stroke-[3]" />}
+                </div>
+                <div className="min-w-0">
+                  <div className="truncate">Also save HD Thumbnail</div>
+                  <div className="text-[10px] font-normal text-[#64748B]">Auto-saves image file</div>
+                </div>
+              </label>
+
+              {/* Option 2: Also Save Tags & Description */}
+              <label
+                onClick={handleToggleIncludeMetadata}
+                className={`flex items-center gap-2.5 p-2 rounded-lg border text-xs font-semibold cursor-pointer transition-colors ${
+                  includeMetadata
+                    ? 'bg-[#F0FDF4] border-[#86EFAC] text-[#16A34A]'
+                    : 'bg-white border-[#E2E8F0] text-[#64748B] hover:border-slate-300'
+                }`}
+              >
+                <div
+                  className={`w-4 h-4 rounded flex items-center justify-center shrink-0 border ${
+                    includeMetadata ? 'bg-[#16A34A] border-[#16A34A] text-white' : 'border-[#CBD5E1] bg-white'
+                  }`}
+                >
+                  {includeMetadata && <Check className="w-3 h-3 stroke-[3]" />}
+                </div>
+                <div className="min-w-0">
+                  <div className="truncate">Also save Tags & Info (.txt)</div>
+                  <div className="text-[10px] font-normal text-[#64748B]">Title, tags & description</div>
+                </div>
+              </label>
+            </div>
+          </div>
+
+          {/* More options accordion (Format & Subtitles) */}
+          <div className="pt-1">
             <button
               type="button"
               onClick={() => setShowAdvanced(!showAdvanced)}
-              className="text-xs text-[#64748B] hover:text-[#0F172A] flex items-center gap-1 font-medium transition-colors"
+              className="text-xs text-[#64748B] hover:text-[#0F172A] flex items-center gap-1 font-medium transition-colors cursor-pointer"
             >
               {showAdvanced ? (
                 <>
                   <ChevronUp className="w-3.5 h-3.5" />
-                  <span>Hide advanced options</span>
+                  <span>Hide container & subtitle options</span>
                 </>
               ) : (
                 <>
                   <ChevronDown className="w-3.5 h-3.5" />
-                  <span>More options (Format & Subtitles)</span>
+                  <span>Advanced options (MKV, Apple AAC, Subtitles)</span>
                 </>
               )}
             </button>
 
             {showAdvanced && (
-              <div className="mt-3 p-3.5 bg-[#F8FAF9] rounded-xl border border-[#E2E8F0] space-y-3 animate-in fade-in">
+              <div className="mt-2.5 p-3.5 bg-[#F8FAF9] rounded-xl border border-[#E2E8F0] space-y-3 animate-in fade-in">
                 <div>
                   <label className="text-[11px] font-semibold text-[#64748B] block mb-1">
                     Container Format
@@ -315,13 +680,13 @@ export const VideoPreviewCard: React.FC<VideoPreviewCardProps> = ({
           </div>
 
           {/* Download Action CTA */}
-          <div className="pt-3">
+          <div className="pt-2">
             <Button
               type="button"
               variant="primary"
               onClick={handleDownloadClick}
               disabled={isLoading}
-              className="w-full py-4 rounded-xl font-bold text-sm bg-[#16A34A] hover:bg-[#15803D] active:scale-[0.99] text-white shadow-md shadow-[#16A34A]/25 flex items-center justify-center gap-2 transition-transform"
+              className="w-full py-4 rounded-xl font-bold text-sm bg-[#16A34A] hover:bg-[#15803D] active:scale-[0.99] text-white shadow-md shadow-[#16A34A]/25 flex items-center justify-center gap-2 transition-transform cursor-pointer"
             >
               {isLoading ? (
                 <>
@@ -340,6 +705,21 @@ export const VideoPreviewCard: React.FC<VideoPreviewCardProps> = ({
                 </>
               )}
             </Button>
+
+            {(includeThumbnail || includeMetadata) && (
+              <div className="mt-2 text-center text-[11px] text-[#16A34A] font-semibold flex items-center justify-center gap-1.5">
+                <Check className="w-3.5 h-3.5" />
+                <span>
+                  Will also save:{' '}
+                  {[
+                    includeThumbnail && 'HD Thumbnail',
+                    includeMetadata && 'Tags & Info (.txt)',
+                  ]
+                    .filter(Boolean)
+                    .join(' + ')}
+                </span>
+              </div>
+            )}
           </div>
         </div>
       </Card>
