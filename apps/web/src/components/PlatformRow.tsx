@@ -11,11 +11,9 @@ export const PlatformRow: React.FC<PlatformRowProps> = ({ onSelectPlatform }) =>
     {
       id: 'youtube',
       name: 'YouTube',
-      badge: '4K & MP3 Direct',
       sampleUrl: 'https://www.youtube.com/watch?v=nLKKoMptkOk',
       glowShadow: '0 12px 28px -4px rgba(255, 0, 0, 0.5), 0 0 20px rgba(255, 0, 0, 0.35)',
       activeBorder: 'hover:border-red-500/60',
-      badgeBg: 'bg-red-50 text-red-600 border-red-200',
       icon: (
         <svg viewBox="0 0 64 64" className="w-12 h-12 transition-transform duration-300 group-hover:scale-110" fill="none" xmlns="http://www.w3.org/2000/svg">
           <defs>
@@ -47,11 +45,9 @@ export const PlatformRow: React.FC<PlatformRowProps> = ({ onSelectPlatform }) =>
     {
       id: 'facebook',
       name: 'Facebook',
-      badge: '1080p HD Direct',
       sampleUrl: 'https://www.facebook.com/watch?v=10153231379946729',
       glowShadow: '0 12px 28px -4px rgba(24, 119, 242, 0.5), 0 0 20px rgba(24, 119, 242, 0.35)',
       activeBorder: 'hover:border-blue-500/60',
-      badgeBg: 'bg-blue-50 text-blue-600 border-blue-200',
       icon: (
         <svg viewBox="0 0 64 64" className="w-12 h-12 transition-transform duration-300 group-hover:scale-110" fill="none" xmlns="http://www.w3.org/2000/svg">
           <defs>
@@ -79,11 +75,9 @@ export const PlatformRow: React.FC<PlatformRowProps> = ({ onSelectPlatform }) =>
     {
       id: 'whatsapp',
       name: 'WhatsApp',
-      badge: 'Auto-Detect Video',
       sampleUrl: 'https://youtu.be/nLKKoMptkOk',
       glowShadow: '0 12px 28px -4px rgba(37, 211, 102, 0.5), 0 0 20px rgba(37, 211, 102, 0.35)',
       activeBorder: 'hover:border-emerald-500/60',
-      badgeBg: 'bg-emerald-50 text-emerald-600 border-emerald-200',
       icon: (
         <svg viewBox="0 0 64 64" className="w-12 h-12 transition-transform duration-300 group-hover:scale-110" fill="none" xmlns="http://www.w3.org/2000/svg">
           <defs>
@@ -105,11 +99,9 @@ export const PlatformRow: React.FC<PlatformRowProps> = ({ onSelectPlatform }) =>
     {
       id: 'instagram',
       name: 'Instagram',
-      badge: 'Reels & Posts HD',
       sampleUrl: 'https://www.instagram.com/reel/C8t1M2UvQ6-/',
       glowShadow: '0 12px 28px -4px rgba(225, 48, 108, 0.5), 0 0 20px rgba(250, 126, 30, 0.35)',
       activeBorder: 'hover:border-pink-500/60',
-      badgeBg: 'bg-pink-50 text-pink-600 border-pink-200',
       icon: (
         <svg viewBox="0 0 64 64" className="w-12 h-12 transition-transform duration-300 group-hover:scale-110" fill="none" xmlns="http://www.w3.org/2000/svg">
           <defs>
@@ -141,11 +133,9 @@ export const PlatformRow: React.FC<PlatformRowProps> = ({ onSelectPlatform }) =>
     {
       id: 'tiktok',
       name: 'TikTok',
-      badge: 'No Watermark HD',
       sampleUrl: 'https://www.tiktok.com/@tiktok/video/7106594312292453678',
       glowShadow: '0 12px 28px -4px rgba(0, 242, 254, 0.5), 0 0 20px rgba(254, 9, 121, 0.4)',
       activeBorder: 'hover:border-cyan-400/60',
-      badgeBg: 'bg-cyan-50 text-cyan-700 border-cyan-200',
       icon: (
         <svg viewBox="0 0 64 64" className="w-12 h-12 transition-transform duration-300 group-hover:scale-110" fill="none" xmlns="http://www.w3.org/2000/svg">
           <defs>
@@ -180,11 +170,9 @@ export const PlatformRow: React.FC<PlatformRowProps> = ({ onSelectPlatform }) =>
     {
       id: 'x',
       name: 'X (Twitter)',
-      badge: '1080p Direct',
       sampleUrl: 'https://x.com/Twitter/status/1274062719266185217',
       glowShadow: '0 12px 28px -4px rgba(255, 255, 255, 0.4), 0 0 20px rgba(148, 163, 184, 0.4)',
       activeBorder: 'hover:border-slate-500/60',
-      badgeBg: 'bg-slate-100 text-slate-700 border-slate-300',
       icon: (
         <svg viewBox="0 0 64 64" className="w-12 h-12 transition-transform duration-300 group-hover:scale-110" fill="none" xmlns="http://www.w3.org/2000/svg">
           <defs>
@@ -247,13 +235,8 @@ export const PlatformRow: React.FC<PlatformRowProps> = ({ onSelectPlatform }) =>
             </div>
 
             {/* Platform Name */}
-            <span className="text-xs font-bold text-[#0F172A] group-hover:text-black transition-colors font-poppins">
+            <span className="text-xs font-bold text-[#0F172A] group-hover:text-[#16A34A] transition-colors font-poppins text-center">
               {p.name}
-            </span>
-
-            {/* Small Spec Tag */}
-            <span className={`mt-1 text-[10px] font-semibold px-2 py-0.5 rounded-full border ${p.badgeBg} transition-transform duration-200 group-hover:scale-105`}>
-              {p.badge}
             </span>
           </button>
         ))}

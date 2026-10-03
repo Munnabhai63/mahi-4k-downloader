@@ -359,12 +359,6 @@ export default function HomePage() {
 
       {/* Hero Section */}
       <section className="w-full pt-10 pb-4 px-4 sm:px-6 lg:px-8 max-w-4xl mx-auto text-center">
-        {/* 100% Free Unlimited Indicator */}
-        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#F0FDF4] border border-[#86EFAC]/60 text-xs font-bold text-[#16A34A] mb-4 shadow-2xs">
-          <span className="w-2 h-2 rounded-full bg-[#16A34A] animate-pulse" />
-          <span>⚡ 100% Free • Unlimited 4K Downloads • No Sign-in Needed</span>
-        </div>
-
         <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black tracking-tight text-[#0F172A] mb-2 leading-tight font-poppins">
           My <span className="bg-gradient-to-r from-[#16A34A] to-[#10B981] bg-clip-text text-transparent">4K Downloader</span>
         </h1>
