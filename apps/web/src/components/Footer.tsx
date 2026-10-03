@@ -58,7 +58,6 @@ export const Footer: React.FC = () => {
             <ul className="space-y-2 text-sm text-[#64748B]">
               <li><Link href="/terms" className="hover:text-[#16A34A] transition-colors">Terms of Service</Link></li>
               <li><Link href="/privacy" className="hover:text-[#16A34A] transition-colors">Privacy Policy</Link></li>
-              <li><Link href="/dmca" className="hover:text-[#16A34A] transition-colors font-medium text-[#16A34A]">DMCA / Takedown</Link></li>
             </ul>
           </div>
         </div>

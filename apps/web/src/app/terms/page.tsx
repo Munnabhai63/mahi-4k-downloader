@@ -74,7 +74,7 @@ export default function TermsPage() {
             3. Ephemeral Storage & Temporary Processing
           </h2>
           <p>
-            TurboGrab does not host, curate, index, or store video content permanently on its servers. All converted media files are stored strictly on a temporary basis (default time-to-live is 6 hours) and are automatically destroyed by an automated background pruning worker upon expiry.
+            My 4K Downloader does not host, curate, index, or store video content permanently on its servers. All converted media files are held strictly in an isolated temporary processing directory (maximum time-to-live is 15 minutes) and are immediately destroyed upon delivery to your device or upon link expiration.
           </p>
         </section>
 
@@ -91,14 +91,10 @@ export default function TermsPage() {
 
         <section className="space-y-3">
           <h2 className="text-lg font-bold text-[#0F172A] font-poppins">
-            5. Copyright Infringement & DMCA Notices
+            5. Intellectual Property & Downloader Architecture
           </h2>
           <p>
-            TurboGrab maintains a strict expedited DMCA takedown process. If you believe your copyrighted work is being accessed through TurboGrab without permission, submit an official notice via our{' '}
-            <Link href="/dmca" className="text-[#16A34A] font-semibold underline hover:text-[#15803D]">
-              DMCA Takedown Portal
-            </Link>
-            . We immediately block target URL hashes and delete associated temporary records.
+            My 4K Downloader operates exclusively as a client-side conversion and download engine. The service does not host, index, archive, or permanently store any user or third-party media. All temporary files required during active transcoding are automatically deleted upon delivery to your device.
           </p>
         </section>
 

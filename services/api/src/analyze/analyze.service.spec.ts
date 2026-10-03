@@ -41,7 +41,7 @@ describe('AnalyzeService - Security & Platform Detection', () => {
   describe('DRM Platform Blocker (§3 binding requirement)', () => {
     it('should block Netflix URLs with explicit DRM message', async () => {
       await expect(service.validateUrlSecurity('https://www.netflix.com/watch/12345')).rejects.toThrow(
-        'This platform is not supported. TurboGrab strictly adheres to copyright and DRM protection standards.',
+        'Unsupported link.',
       );
     });
 

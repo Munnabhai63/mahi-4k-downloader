@@ -68,7 +68,7 @@ export function sanitizeUserError(rawMsg: string | undefined | null): string {
     lower.includes('invalid url') ||
     lower.includes('failed to parse')
   ) {
-    return 'Unsupported link. Please ensure the link is a valid public video, reel, or track URL.';
+    return 'Unsupported link.';
   }
 
   // Network or timeout

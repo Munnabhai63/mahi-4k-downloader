@@ -2,6 +2,7 @@ import {
   Injectable,
   NotFoundException,
   UnauthorizedException,
+  ServiceUnavailableException,
   Logger,
 } from '@nestjs/common';
 import { spawn, ChildProcess } from 'child_process';
@@ -27,6 +28,8 @@ export class DownloadsService {
   private tempStoragePath: string;
   private secretKey: string;
 
+  private activeStreams = new Map<string, number>();
+
   constructor(
     private readonly eventsGateway: EventsGateway,
     private readonly analyzeService: AnalyzeService,
@@ -49,8 +52,41 @@ export class DownloadsService {
       fs.mkdirSync(this.tempStoragePath, { recursive: true });
     }
 
-    // Schedule 6h TTL temp file cleanup
-    setInterval(() => this.cleanupExpiredFiles(), 60 * 60 * 1000);
+    // Run cleanup on startup and schedule every 2 minutes
+    this.cleanupExpiredFiles();
+    setInterval(() => this.cleanupExpiredFiles(), 2 * 60 * 1000);
+  }
+
+  incrementActiveStream(filePath: string): void {
+    const count = this.activeStreams.get(filePath) || 0;
+    this.activeStreams.set(filePath, count + 1);
+  }
+
+  decrementActiveStream(filePath: string): void {
+    const count = this.activeStreams.get(filePath) || 0;
+    if (count <= 1) {
+      this.activeStreams.delete(filePath);
+    } else {
+      this.activeStreams.set(filePath, count - 1);
+    }
+  }
+
+  isStreaming(filePath: string): boolean {
+    return (this.activeStreams.get(filePath) || 0) > 0;
+  }
+
+  scheduleImmediatePurge(downloadId: string, filePath: string, delayMs: number = 60000): void {
+    setTimeout(() => {
+      try {
+        if (!this.isStreaming(filePath) && fs.existsSync(filePath)) {
+          fs.unlinkSync(filePath);
+          this.logger.log(`[Storage Guard] Cleaned temporary file for job ${downloadId} after download delivery: ${path.basename(filePath)}`);
+          this.nullifyDownloadItemPath(filePath);
+        }
+      } catch (err) {
+        this.logger.warn(`Failed to clean delivered file ${filePath}:`, err);
+      }
+    }, delayMs);
   }
 
   private getMaxConcurrent(userId: string): number {
@@ -85,6 +121,25 @@ export class DownloadsService {
 
   async createDownload(dto: CreateDownloadRequest, userId: string = 'anon-guest'): Promise<DownloadItem> {
     await this.analyzeService.validateUrlSecurity(dto.url);
+
+    // Free disk space guard: prevent filling host disk if free space is under 2GB
+    try {
+      if (fs.existsSync(this.tempStoragePath)) {
+        const stats = (fs as any).statfsSync(this.tempStoragePath);
+        if (stats && stats.bfree && stats.bsize) {
+          const freeBytes = Number(stats.bfree) * Number(stats.bsize);
+          const MIN_FREE_DISK_BYTES = 2 * 1024 * 1024 * 1024; // 2 GB minimum free disk threshold
+          if (freeBytes < MIN_FREE_DISK_BYTES) {
+            this.logger.error(`[Storage Guard] Free disk space critically low: ${(freeBytes / (1024 * 1024)).toFixed(1)}MB. Rejecting new job.`);
+            throw new ServiceUnavailableException(
+              'Server storage capacity is temporarily constrained. Please try again in a few moments.',
+            );
+          }
+        }
+      }
+    } catch (err: any) {
+      if (err instanceof ServiceUnavailableException) throw err;
+    }
 
     const downloadId = crypto.randomUUID();
     const urlHash = crypto.createHash('sha256').update(dto.url.trim()).digest('hex');
@@ -371,6 +426,16 @@ export class DownloadsService {
       this.processes.delete(id);
     }
     item.status = 'CANCELLED';
+
+    // Immediate cleanup of temporary file if not currently streaming
+    if (item.outputPath && fs.existsSync(item.outputPath) && !this.isStreaming(item.outputPath)) {
+      try {
+        fs.unlinkSync(item.outputPath);
+        item.outputPath = undefined;
+        item.signedUrl = undefined;
+      } catch {}
+    }
+
     this.eventsGateway.emitProgress({
       type: 'status_change',
       downloadId: item.id,
@@ -398,7 +463,7 @@ export class DownloadsService {
   deleteDownload(id: string): boolean {
     this.cancelDownload(id);
     const item = this.downloads.get(id);
-    if (item?.outputPath && fs.existsSync(item.outputPath)) {
+    if (item?.outputPath && fs.existsSync(item.outputPath) && !this.isStreaming(item.outputPath)) {
       try {
         fs.unlinkSync(item.outputPath);
       } catch {}
@@ -407,7 +472,7 @@ export class DownloadsService {
   }
 
   generateSignedUrl(downloadId: string, filename: string): string {
-    const expiresAt = Date.now() + 10 * 60 * 1000; // 10 minutes expiry
+    const expiresAt = Date.now() + 15 * 60 * 1000; // 15 minutes strict temporary expiry
     const rawData = `${downloadId}:${expiresAt}:${filename}`;
     const sig = crypto.createHmac('sha256', this.secretKey).update(rawData).digest('hex');
 
@@ -510,23 +575,66 @@ export class DownloadsService {
     return [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
   }
 
-  private cleanupExpiredFiles() {
+  cleanupExpiredFiles() {
     try {
-      const now = Date.now();
-      const ttlMs = 6 * 60 * 60 * 1000; // 6 hours (§3 requirement)
       if (!fs.existsSync(this.tempStoragePath)) return;
+      const now = Date.now();
+      const STALE_TTL_MS = 15 * 60 * 1000; // Strict 15-minute TTL for temporary files
+      const MAX_TEMP_DIR_BYTES = 5 * 1024 * 1024 * 1024; // 5 GB hard ceiling
 
       const files = fs.readdirSync(this.tempStoragePath);
+      let totalDirBytes = 0;
+      const fileList: { file: string; fullPath: string; size: number; mtime: number }[] = [];
+
       for (const file of files) {
+        if (file.startsWith('.') || file.endsWith('.txt')) continue;
+
         const fullPath = path.join(this.tempStoragePath, file);
-        const stats = fs.statSync(fullPath);
-        if (now - stats.mtimeMs > ttlMs) {
-          fs.unlinkSync(fullPath);
-          this.logger.log(`Purged expired temp file: ${file}`);
+        try {
+          const stats = fs.statSync(fullPath);
+          totalDirBytes += stats.size;
+          fileList.push({ file, fullPath, size: stats.size, mtime: stats.mtimeMs });
+
+          // 1. Time-based purge: Any file older than 15 minutes that is NOT actively streaming
+          if (now - stats.mtimeMs > STALE_TTL_MS) {
+            if (!this.isStreaming(fullPath)) {
+              fs.unlinkSync(fullPath);
+              this.logger.log(`[Storage Guard] Purged stale temp file (>15m TTL): ${file}`);
+              this.nullifyDownloadItemPath(fullPath);
+            }
+          }
+        } catch {}
+      }
+
+      // 2. Storage ceiling guard: If directory size > 5 GB, purge oldest non-streaming files
+      if (totalDirBytes > MAX_TEMP_DIR_BYTES) {
+        this.logger.warn(`[Storage Guard] Temp directory size (${(totalDirBytes / (1024 * 1024)).toFixed(1)}MB) exceeded 5GB limit. Running emergency purge.`);
+        fileList.sort((a, b) => a.mtime - b.mtime);
+        for (const item of fileList) {
+          if (totalDirBytes <= 3 * 1024 * 1024 * 1024) break;
+          if (!this.isStreaming(item.fullPath)) {
+            try {
+              if (fs.existsSync(item.fullPath)) {
+                fs.unlinkSync(item.fullPath);
+                totalDirBytes -= item.size;
+                this.logger.log(`[Storage Guard] Emergency purged oldest file: ${item.file}`);
+                this.nullifyDownloadItemPath(item.fullPath);
+              }
+            } catch {}
+          }
         }
       }
     } catch (e) {
       this.logger.error('Error running temp storage TTL cleanup', e);
+    }
+  }
+
+  private nullifyDownloadItemPath(filePath: string) {
+    for (const item of this.downloads.values()) {
+      if (item.outputPath === filePath) {
+        item.outputPath = undefined;
+        item.signedUrl = undefined;
+      }
     }
   }
 }

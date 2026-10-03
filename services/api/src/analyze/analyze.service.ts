@@ -55,11 +55,11 @@ export class AnalyzeService {
     try {
       parsed = new URL(rawUrl.trim());
     } catch {
-      throw new BadRequestException('Invalid URL format. Please provide a valid HTTP or HTTPS URL.');
+      throw new BadRequestException('Unsupported link.');
     }
 
     if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
-      throw new BadRequestException('Unsupported protocol. Only http:// and https:// URLs are permitted.');
+      throw new BadRequestException('Unsupported link.');
     }
 
     const hostname = parsed.hostname.toLowerCase();
@@ -70,9 +70,7 @@ export class AnalyzeService {
     );
 
     if (isDrmBlocked) {
-      throw new BadRequestException(
-        'This platform is not supported. TurboGrab strictly adheres to copyright and DRM protection standards.',
-      );
+      throw new BadRequestException('Unsupported link.');
     }
 
     // SSRF Protection: Disallow localhost & loopback strings
@@ -175,8 +173,17 @@ export class AnalyzeService {
             userSafeMsg = 'This video is unavailable or has been removed.';
           } else if (lowerErr.includes('geo') || lowerErr.includes('location') || lowerErr.includes('not available in your country')) {
             userSafeMsg = 'This video is geographically restricted in the server region.';
+          } else if (
+            lowerErr.includes('unsupported url') ||
+            lowerErr.includes('no suitable extractor') ||
+            lowerErr.includes('is not a valid url') ||
+            lowerErr.includes('unsupported')
+          ) {
+            userSafeMsg = 'Unsupported link.';
           } else if (lowerErr.includes('bot') || lowerErr.includes('verification')) {
             userSafeMsg = 'The provider temporarily requires additional verification for this video.';
+          } else {
+            userSafeMsg = 'Unsupported link.';
           }
 
           return reject(new BadRequestException(userSafeMsg));
@@ -196,7 +203,7 @@ export class AnalyzeService {
           }
         }
 
-        reject(new BadRequestException('No supported video stream or metadata found at the provided URL.'));
+        reject(new BadRequestException('Unsupported link.'));
       });
 
       child.on('error', (err) => {

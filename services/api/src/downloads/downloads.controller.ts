@@ -120,6 +120,24 @@ export class DownloadsController {
 
     const range = req.headers.range;
 
+    this.downloadsService.incrementActiveStream(filePath);
+
+    res.on('finish', () => {
+      this.downloadsService.decrementActiveStream(filePath);
+      // Purge delivered temporary file after a 60-second grace window (non-range full download)
+      if (!range) {
+        this.downloadsService.scheduleImmediatePurge(id, filePath, 60 * 1000);
+      }
+    });
+
+    res.on('close', () => {
+      this.downloadsService.decrementActiveStream(filePath);
+    });
+
+    res.on('error', () => {
+      this.downloadsService.decrementActiveStream(filePath);
+    });
+
     if (range) {
       const parts = range.replace(/bytes=/, '').split('-');
       const start = parseInt(parts[0], 10);

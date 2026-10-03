@@ -77,6 +77,17 @@ def detect_platform(url: str, extractor_key: Optional[str] = None) -> str:
         return "snapchat"
     if "likee.video" in url_lower:
         return "likee"
+    if extractor_key:
+        k = extractor_key.lower()
+        if "youtube" in k: return "youtube"
+        if "instagram" in k: return "instagram"
+        if "tiktok" in k: return "tiktok"
+        if "twitter" in k: return "twitter"
+        if "vimeo" in k: return "vimeo"
+        if "facebook" in k: return "facebook"
+        if "reddit" in k: return "reddit"
+        if "dailymotion" in k: return "dailymotion"
+    return "generic"
 SERVER_COOKIE_FILE = os.getenv("YOUTUBE_COOKIE_FILE", "/etc/secrets/youtube-cookies.txt")
 
 def _get_js_runtime() -> Tuple[Optional[Dict[str, Any]], Dict[str, str]]:
@@ -386,6 +397,7 @@ def download_video(spec: Dict[str, Any]):
     ydl_opts: Dict[str, Any] = {
         "format": format_selector,
         "outtmpl": outtmpl,
+        "max_filesize": 2 * 1024 * 1024 * 1024,  # Strict VPS disk guard: 2GB per-job limit
         "quiet": True,
         "no_warnings": True,
         "progress_hooks": [progress_hook],
@@ -466,6 +478,16 @@ def download_video(spec: Dict[str, Any]):
             print("__COMPLETE__:" + json.dumps(complete_payload), flush=True)
 
     except Exception as exc:
+        # Strict Downloader-Only Mode: Clean up any partial/temporary download artifacts immediately on failure
+        try:
+            for f in os.listdir(output_dir):
+                if f.startswith(download_id):
+                    partial_f = os.path.join(output_dir, f)
+                    if os.path.isfile(partial_f):
+                        os.unlink(partial_f)
+        except Exception:
+            pass
+
         err_payload = {
             "type": "failed",
             "downloadId": download_id,

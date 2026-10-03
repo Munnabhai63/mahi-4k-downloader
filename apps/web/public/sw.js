@@ -5,7 +5,6 @@ const ASSETS_TO_CACHE = [
   '/manifest.json',
   '/terms',
   '/privacy',
-  '/dmca',
 ];
 
 self.addEventListener('install', (event) => {
