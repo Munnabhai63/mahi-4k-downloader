@@ -3,7 +3,7 @@
 use serde::{Deserialize, Serialize};
 use std::env;
 use std::io::{BufRead, BufReader};
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::process::{Command, Stdio};
 use std::thread;
 use tauri::Emitter;
@@ -85,53 +85,45 @@ fn get_downloads_dir() -> PathBuf {
 }
 
 fn find_ytdlp_bin() -> (String, Vec<String>) {
-    // 1. Check local F:\yt-dlp.exe
-    if Path::new("F:\\yt-dlp.exe").exists() {
-        return ("F:\\yt-dlp.exe".to_string(), vec![]);
-    }
-    // 2. Check bundled / adjacent binaries folder
     if let Ok(exe_path) = env::current_exe() {
         if let Some(exe_dir) = exe_path.parent() {
-            let local_bin = exe_dir.join("binaries").join("yt-dlp.exe");
-            if local_bin.exists() {
-                return (local_bin.to_string_lossy().to_string(), vec![]);
+            let candidates = [
+                exe_dir.join("yt-dlp.exe"),
+                exe_dir.join("yt-dlp-x86_64-pc-windows-msvc.exe"),
+                exe_dir.join("binaries").join("yt-dlp.exe"),
+                exe_dir.join("binaries").join("yt-dlp-x86_64-pc-windows-msvc.exe"),
+                exe_dir.join("resources").join("yt-dlp.exe"),
+                exe_dir.join("resources").join("binaries").join("yt-dlp.exe"),
+                exe_dir.join("resources").join("binaries").join("yt-dlp-x86_64-pc-windows-msvc.exe"),
+            ];
+            for p in &candidates {
+                if p.exists() {
+                    return (p.to_string_lossy().to_string(), vec![]);
+                }
             }
         }
     }
-    // 3. Check python Scripts yt-dlp.exe
-    if let Ok(userprofile) = env::var("USERPROFILE") {
-        let py_bin = format!("{}\\AppData\\Local\\Python\\pythoncore-3.14-64\\Scripts\\yt-dlp.exe", userprofile);
-        if Path::new(&py_bin).exists() {
-            return (py_bin, vec![]);
-        }
-    }
-    // 4. Fallback to python -m yt_dlp
-    ("python".to_string(), vec!["-m".to_string(), "yt_dlp".to_string()])
+    // Fallback: check system PATH
+    ("yt-dlp".to_string(), vec![])
 }
 
 fn find_ffmpeg_bin() -> Option<String> {
-    if Path::new("F:\\ffmpeg.exe").exists() {
-        return Some("F:\\ffmpeg.exe".to_string());
-    }
     if let Ok(exe_path) = env::current_exe() {
         if let Some(exe_dir) = exe_path.parent() {
-            let local_bin = exe_dir.join("binaries").join("ffmpeg.exe");
-            if local_bin.exists() {
-                return Some(local_bin.to_string_lossy().to_string());
+            let candidates = [
+                exe_dir.join("ffmpeg.exe"),
+                exe_dir.join("ffmpeg-x86_64-pc-windows-msvc.exe"),
+                exe_dir.join("binaries").join("ffmpeg.exe"),
+                exe_dir.join("binaries").join("ffmpeg-x86_64-pc-windows-msvc.exe"),
+                exe_dir.join("resources").join("ffmpeg.exe"),
+                exe_dir.join("resources").join("binaries").join("ffmpeg.exe"),
+                exe_dir.join("resources").join("binaries").join("ffmpeg-x86_64-pc-windows-msvc.exe"),
+            ];
+            for p in &candidates {
+                if p.exists() {
+                    return Some(p.to_string_lossy().to_string());
+                }
             }
-            let adjacent_bin = exe_dir.join("ffmpeg.exe");
-            if adjacent_bin.exists() {
-                return Some(adjacent_bin.to_string_lossy().to_string());
-            }
-        }
-    }
-    if let Ok(userprofile) = env::var("USERPROFILE") {
-        let ffmpeg_pkg = format!(
-            "{}\\AppData\\Local\\Microsoft\\WinGet\\Packages\\Gyan.FFmpeg_Microsoft.Winget.Source_8wekyb3d8bbwe\\ffmpeg-9.0.1-full_build\\bin\\ffmpeg.exe",
-            userprofile
-        );
-        if Path::new(&ffmpeg_pkg).exists() {
-            return Some(ffmpeg_pkg);
         }
     }
     None
