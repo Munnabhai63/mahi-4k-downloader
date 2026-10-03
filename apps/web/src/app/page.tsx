@@ -96,73 +96,43 @@ export default function HomePage() {
     setBatchResults([]);
     setLastAttemptedUrl(url);
 
-    const MAX_RETRIES = 2;
-    let lastError: Error | null = null;
+    try {
+      const res = await fetch(`${getApiUrl()}/analyze`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url }),
+      });
 
-    for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
-      try {
-        if (attempt > 0) {
-          // Capped backoff: 800ms, 1600ms
-          await new Promise((resolve) => setTimeout(resolve, Math.min(800 * Math.pow(2, attempt - 1), 2000)));
-        }
+      const data = await res.json();
 
-        const res = await fetch(`${getApiUrl()}/analyze`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ url }),
-        });
-
-        const data = await res.json();
-
-        if (!res.ok) {
-          // If 400 Bad Request (e.g. Unsupported link, private, not available), don't retry
-          if (res.status === 400) {
-            throw new Error(data.message || 'Unsupported link.');
-          }
-          throw new Error(data.message || 'Server temporarily busy.');
-        }
-
-        if (useSmartMode) {
-          let prefQuality: VideoQualityLabel = '1080p';
-          let prefFormat: VideoFormat = 'mp4';
-          if (typeof window !== 'undefined') {
-            const stored = localStorage.getItem('turbograb_settings');
-            if (stored) {
-              try {
-                const parsed = JSON.parse(stored);
-                if (parsed.defaultQuality) prefQuality = parsed.defaultQuality;
-                if (parsed.defaultFormat) prefFormat = parsed.defaultFormat;
-              } catch {}
-            }
-          }
-          await triggerDownloadJob(data, prefQuality, prefFormat);
-        } else {
-          setAnalyzeResult(data);
-        }
-        setIsAnalyzing(false);
-        return; // Success!
-      } catch (err: any) {
-        lastError = err;
-        const msg = err?.message || '';
-        // Break out of retry if client error or explicit unsupported/blocked message
-        if (
-          msg.includes('Unsupported') ||
-          msg.includes('private') ||
-          msg.includes('unavailable') ||
-          msg.includes('direct download right now') ||
-          msg.includes('restricted')
-        ) {
-          break;
-        }
+      if (!res.ok) {
+        throw new Error(data.message || 'Unable to download this link right now.');
       }
-    }
 
-    if (lastError) {
+      if (useSmartMode) {
+        let prefQuality: VideoQualityLabel = '1080p';
+        let prefFormat: VideoFormat = 'mp4';
+        if (typeof window !== 'undefined') {
+          const stored = localStorage.getItem('turbograb_settings');
+          if (stored) {
+            try {
+              const parsed = JSON.parse(stored);
+              if (parsed.defaultQuality) prefQuality = parsed.defaultQuality;
+              if (parsed.defaultFormat) prefFormat = parsed.defaultFormat;
+            } catch {}
+          }
+        }
+        await triggerDownloadJob(data, prefQuality, prefFormat);
+      } else {
+        setAnalyzeResult(data);
+      }
+    } catch (err: any) {
       setErrorMessage(
-        sanitizeUserError(lastError.message || 'Unable to analyze video URL. Please check the link and try again.'),
+        sanitizeUserError(err.message || 'Unable to analyze video URL. Please check the link and try again.'),
       );
+    } finally {
+      setIsAnalyzing(false);
     }
-    setIsAnalyzing(false);
   };
 
   const handleBatchAnalyze = async (urls: string[]) => {
@@ -461,7 +431,7 @@ export default function HomePage() {
             <div className="flex items-center gap-2.5 text-[#16A34A]">
               <Loader2 className="w-4 h-4 animate-spin" />
               <span className="text-xs font-bold">
-                Analyzing video link & checking available formats...
+                Checking video...
               </span>
             </div>
             <div className="flex gap-3">

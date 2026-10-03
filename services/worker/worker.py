@@ -163,7 +163,14 @@ PERMANENT_ERROR_PATTERNS = [
     "404",
     "not found",
     "does not exist",
-    "requested format not available"
+    "requested format not available",
+    "sign in to confirm you’re not a bot",
+    "sign in to confirm you're not a bot",
+    "botguard",
+    "login_required",
+    "requires authentication",
+    "checkpoint_required",
+    "login required"
 ]
 
 def is_permanent_failure(err_str: str) -> bool:
@@ -181,12 +188,14 @@ def _extract_with_fallback(
     """
     Controlled silent server-side fallback pipeline.
     Attempts primary extraction, then alternate player clients or transient retries.
-    Permanent failures (private, deleted, geo-restricted) fail immediately without retrying.
+    Permanent failures (private, deleted, geo-restricted, bot challenge) fail immediately without retrying.
     """
     platform = detect_platform(url)
 
-    # Alternate configurations for platforms with multi-client support
-    if platform == "youtube":
+    # For fast analyze calls (download=False): execute single fast pass, do not loop through 6 client profiles
+    if not download:
+        profiles = [{"player_client": ["android", "ios", "web", "mweb"]}] if platform == "youtube" else [{}]
+    elif platform == "youtube":
         profiles = [
             {"player_client": ["android", "ios", "web", "mweb"]},
             {"player_client": ["ios"]},
@@ -210,7 +219,7 @@ def _extract_with_fallback(
             else:
                 opts["extractor_args"] = {k: v for k, v in opts["extractor_args"].items() if k != "youtube"}
 
-        max_transient_attempts = 2 if idx == 0 else 1
+        max_transient_attempts = 1 if not download else (2 if idx == 0 else 1)
         for attempt in range(max_transient_attempts):
             try:
                 with yt_dlp.YoutubeDL(opts) as ydl:
@@ -251,7 +260,8 @@ def analyze_url(url: str, cookie_file: Optional[str] = None) -> Dict[str, Any]:
         "quiet": True,
         "no_warnings": True,
         "skip_download": True,
-        "extract_flat": False,
+        "extract_flat": "in_playlist",
+        "socket_timeout": 5,
         "extractor_args": {
             "youtube": {
                 "player_client": ["android", "ios", "web", "mweb"]

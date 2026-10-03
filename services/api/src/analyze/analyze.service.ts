@@ -33,10 +33,18 @@ const PRIVATE_IP_RANGES = [
   /^fe80:/i,
 ];
 
+interface CachedAnalysis {
+  result: AnalyzeResult;
+  timestamp: number;
+}
+
 @Injectable()
 export class AnalyzeService {
   private workerScriptPath: string;
   private pythonCommand: string;
+  private metadataCache = new Map<string, CachedAnalysis>();
+  private readonly CACHE_TTL_MS = 10 * 60 * 1000; // 10 minutes cache TTL
+  private readonly MAX_CACHE_ITEMS = 500;
 
   constructor() {
     this.workerScriptPath = path.resolve(process.cwd(), '../../services/worker/worker.py');
@@ -126,8 +134,14 @@ export class AnalyzeService {
   async analyze(url: string): Promise<AnalyzeResult> {
     await this.validateUrlSecurity(url);
 
+    const normalizedUrl = url.trim();
+    const cached = this.metadataCache.get(normalizedUrl);
+    if (cached && Date.now() - cached.timestamp < this.CACHE_TTL_MS) {
+      return cached.result;
+    }
+
     return new Promise<AnalyzeResult>((resolve, reject) => {
-      const child = spawn(this.pythonCommand, [this.workerScriptPath, '--analyze', url], {
+      const child = spawn(this.pythonCommand, [this.workerScriptPath, '--analyze', normalizedUrl], {
         windowsHide: true,
       });
 
@@ -144,8 +158,8 @@ export class AnalyzeService {
 
       const timer = setTimeout(() => {
         child.kill();
-        reject(new BadRequestException('URL analysis timed out after 15 seconds. Please try again.'));
-      }, 15000);
+        reject(new BadRequestException('URL analysis timed out. Please try our Desktop App for faster download.'));
+      }, 6000);
 
       child.on('close', (code) => {
         clearTimeout(timer);
@@ -157,7 +171,15 @@ export class AnalyzeService {
           const lowerErr = rawErr.toLowerCase();
           let userSafeMsg = 'Unable to download this link right now.';
 
-          if (lowerErr.includes('private video') || lowerErr.includes('this video is private') || lowerErr.includes('only works when logged-in')) {
+          if (
+            lowerErr.includes('sign in to confirm') ||
+            lowerErr.includes('bot') ||
+            lowerErr.includes('login') ||
+            lowerErr.includes('checkpoint') ||
+            lowerErr.includes('cookies')
+          ) {
+            userSafeMsg = 'This video requires residential access. Please download with the free Desktop App.';
+          } else if (lowerErr.includes('private video') || lowerErr.includes('this video is private') || lowerErr.includes('only works when logged-in')) {
             userSafeMsg = 'This video is private or restricted by its author.';
           } else if (lowerErr.includes('video unavailable') || lowerErr.includes('does not exist') || lowerErr.includes('not found') || lowerErr.includes('404')) {
             userSafeMsg = 'This video is unavailable or has been removed.';
@@ -170,7 +192,7 @@ export class AnalyzeService {
           ) {
             userSafeMsg = 'Unsupported link.';
           } else if (lowerErr.includes('timeout') || lowerErr.includes('timed out') || lowerErr.includes('connection reset') || lowerErr.includes('network')) {
-            userSafeMsg = 'This source is temporarily unavailable.';
+            userSafeMsg = 'Analysis timed out. Please use the Desktop App for faster download.';
           } else {
             userSafeMsg = 'Unable to download this link right now.';
           }
@@ -185,6 +207,14 @@ export class AnalyzeService {
             try {
               const jsonStr = trimmed.substring('__RESULT__:'.length);
               const result: AnalyzeResult = JSON.parse(jsonStr);
+
+              // Store in fast in-memory cache
+              if (this.metadataCache.size >= this.MAX_CACHE_ITEMS) {
+                const firstKey = this.metadataCache.keys().next().value;
+                if (firstKey) this.metadataCache.delete(firstKey);
+              }
+              this.metadataCache.set(normalizedUrl, { result, timestamp: Date.now() });
+
               return resolve(result);
             } catch (err: any) {
               return reject(new InternalServerErrorException(`Malformed metadata returned by worker: ${err.message}`));
