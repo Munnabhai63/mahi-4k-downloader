@@ -36,6 +36,7 @@ export default function HomePage() {
   const [activeDownloads, setActiveDownloads] = useState<DownloadItem[]>([]);
   const [isStartingDownload, setIsStartingDownload] = useState<boolean>(false);
   const [userRole, setUserRole] = useState<string>('student');
+  const [lastAttemptedUrl, setLastAttemptedUrl] = useState<string>('');
 
   const [dynamicConfig, setDynamicConfig] = useState<{
     siteTitle: string;
@@ -93,6 +94,7 @@ export default function HomePage() {
     setErrorMessage(null);
     setAnalyzeResult(null);
     setBatchResults([]);
+    setLastAttemptedUrl(url);
 
     const MAX_RETRIES = 2;
     let lastError: Error | null = null;
@@ -309,18 +311,18 @@ export default function HomePage() {
   const features = [
     {
       icon: <Zap className="w-5 h-5 text-[#16A34A]" />,
-      title: 'Ultra HD & 8K',
-      desc: 'Lossless 4K & 8K video up to 60fps with pristine high-fidelity audio.',
+      title: '4K Desktop & HD Web',
+      desc: 'Lossless 4K video via local Desktop engine; fast 1080p and open media streams on Web.',
     },
     {
       icon: <Globe className="w-5 h-5 text-[#16A34A]" />,
-      title: '1,000+ Platforms',
-      desc: 'YouTube, Instagram Reels, TikTok (no watermark), X, and Facebook.',
+      title: 'Verified Platforms',
+      desc: 'Facebook, Archive.org, Direct MP4 on Web; YouTube, Instagram, TikTok, and X via Desktop.',
     },
     {
       icon: <Music className="w-5 h-5 text-[#16A34A]" />,
       title: '320kbps MP3 Audio',
-      desc: 'One-click lossless audio extraction to high-bitrate MP3 or M4A.',
+      desc: 'One-click local audio extraction to high-bitrate MP3 or M4A.',
     },
     {
       icon: <Layers className="w-5 h-5 text-[#16A34A]" />,
@@ -329,13 +331,13 @@ export default function HomePage() {
     },
     {
       icon: <Sliders className="w-5 h-5 text-[#16A34A]" />,
-      title: '1-Click Smart Mode',
-      desc: 'Save your preferred format and download folder for instant grabbing.',
+      title: 'Local Hybrid Engine',
+      desc: 'Direct residential-speed extraction without cloud datacenter blocks.',
     },
     {
       icon: <ShieldCheck className="w-5 h-5 text-[#16A34A]" />,
       title: '100% Ad-Free & Clean',
-      desc: 'Zero popups, adware, or malware. Runs completely direct in your browser.',
+      desc: 'Zero popups, adware, or tracking. Clean, transparent, and private media downloads.',
     },
   ];
 
@@ -353,34 +355,34 @@ export default function HomePage() {
     {
       step: '03',
       title: 'Instant Save',
-      desc: 'Multi-threaded ultra-fast download directly to your device.',
+      desc: 'Direct download to your device without cloud storage retention.',
     },
   ];
 
   const faqs = [
     {
       q: 'What is My 4K Downloader?',
-      a: 'My 4K Downloader is a fast, 100% free online video and audio downloader. It allows you to download videos in 4K UHD, 1080p, and high-bitrate 320kbps MP3 audio from YouTube, Instagram, TikTok, Facebook, Twitter/X, and 1,000+ websites directly in your browser.',
+      a: 'My 4K Downloader is a high-speed video and audio download ecosystem offering instant web downloads for public open media and an advanced local Desktop App powered by yt-dlp & FFmpeg for pristine 4K video and MP3 audio.',
     },
     {
       q: 'Is My 4K Downloader free to use?',
-      a: 'Yes, My 4K Downloader is completely free with no subscriptions, paid tiers, or hidden fees. Everyday users receive 50 high-speed daily downloads with zero intrusive advertisements.',
+      a: 'Yes, My 4K Downloader is completely free with no subscriptions, paid tiers, or hidden fees. Standard users receive 50 high-speed daily downloads with zero intrusive advertisements.',
     },
     {
       q: 'How do I download 4K videos using My 4K Downloader?',
-      a: 'Simply copy the video link from YouTube, Instagram, or any supported platform, paste it into the search bar, select your desired resolution (such as 4K or 1080p) or MP3 format, and click download.',
+      a: 'For true 4K and high-framerate videos from platforms like YouTube, use our free My 4K Downloader Desktop App. It runs directly on your computer, eliminating datacenter IP restrictions. The web version reliably supports public Facebook videos, Archive.org, and direct MP4/WebM files.',
     },
     {
-      q: 'Can I download TikTok videos without watermarks?',
-      a: 'Yes! TikTok videos are automatically extracted in clean, crystal-clear HD resolution without any watermark logo.',
+      q: 'Can I download TikTok and Instagram videos?',
+      a: 'Yes! Public TikTok and Instagram reels can be downloaded directly through our Desktop App using local extraction. Private or account-locked media cannot be bypassed.',
     },
     {
       q: 'Which video and audio formats are supported?',
-      a: 'My 4K Downloader supports video resolutions from 360p up to 8K Ultra HD in MP4, MKV, and WebM containers, as well as MP3 (up to 320kbps), M4A, and WAV audio formats.',
+      a: 'My 4K Downloader supports video resolutions up to 4K Ultra HD in MP4 and WebM containers, as well as MP3 (up to 320kbps), M4A, and WAV audio formats.',
     },
     {
       q: 'Are my downloads and privacy protected?',
-      a: 'Yes. We do not track users or permanently store your downloaded files. All media streams are processed over secure HTTPS connections and automatically deleted within 6 hours.',
+      a: 'Yes. We do not track users or store your downloaded files on cloud servers. Desktop downloads save directly from the provider to your local Downloads folder.',
     },
   ];
 
@@ -423,21 +425,33 @@ export default function HomePage() {
           onClearError={() => setErrorMessage(null)}
         />
 
-        {/* Compact Neutral Inline Status */}
+        {/* Compact Neutral Inline Status with Desktop Bridge CTA */}
         {errorMessage && (
-          <div className="w-full max-w-xl mx-auto mt-2.5 px-3 py-1.5 flex items-center justify-between gap-2.5 rounded-lg bg-slate-50 border border-slate-200/80 text-xs text-slate-600 animate-in fade-in duration-200">
+          <div className="w-full max-w-xl mx-auto mt-2.5 px-3 py-2 flex flex-col sm:flex-row items-center justify-between gap-2.5 rounded-xl bg-slate-50 border border-slate-200/90 text-xs text-slate-700 animate-in fade-in duration-200 shadow-2xs">
             <div className="flex items-center gap-2 min-w-0">
-              <span className="w-1.5 h-1.5 rounded-full bg-slate-400 shrink-0" />
-              <span className="truncate">{errorMessage}</span>
+              <span className="w-2 h-2 rounded-full bg-slate-400 shrink-0" />
+              <span className="truncate font-medium">{errorMessage}</span>
             </div>
-            <button
-              type="button"
-              onClick={() => setErrorMessage(null)}
-              className="text-slate-400 hover:text-slate-600 p-0.5 rounded transition-colors shrink-0"
-              title="Dismiss"
-            >
-              <X className="w-3.5 h-3.5" />
-            </button>
+            <div className="flex items-center gap-2 shrink-0">
+              {lastAttemptedUrl && (
+                <a
+                  href={`m4k://download?url=${encodeURIComponent(lastAttemptedUrl)}`}
+                  className="px-2.5 py-1 bg-[#16A34A] hover:bg-[#15803D] text-white text-[11px] font-bold rounded-lg transition-colors flex items-center gap-1 shadow-xs cursor-pointer"
+                  title="Open link in My 4K Downloader Desktop App"
+                >
+                  <span>⚡</span>
+                  <span>Download with Desktop App</span>
+                </a>
+              )}
+              <button
+                type="button"
+                onClick={() => setErrorMessage(null)}
+                className="text-slate-400 hover:text-slate-600 p-1 rounded transition-colors"
+                title="Dismiss"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
           </div>
         )}
 

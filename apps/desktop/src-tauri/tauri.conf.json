@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "TurboGrab",
+  "productName": "My 4K Downloader",
   "version": "1.0.0",
-  "identifier": "com.turbograb.app",
+  "identifier": "com.mahi.my4kdownloader",
   "build": {
     "beforeDevCommand": "pnpm dev",
     "devUrl": "http://localhost:5173",
@@ -12,7 +12,7 @@
   "app": {
     "windows": [
       {
-        "title": "TurboGrab — Universal Video Downloader",
+        "title": "My 4K Downloader — Universal Video Downloader",
         "width": 900,
         "height": 680,
         "resizable": true,

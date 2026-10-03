@@ -6,11 +6,40 @@ document.addEventListener('DOMContentLoaded', () => {
   const resultTitle = document.getElementById('result-title');
   const resultMeta = document.getElementById('result-meta');
   const btnDownload = document.getElementById('btn-download');
+  const btnDesktop = document.getElementById('btn-desktop');
 
   const API_BASE = 'https://api4k.mahiskills.in/api/v1';
   const WEB_APP = 'https://mahi-4k-downloader.pages.dev';
 
   let currentAnalysis = null;
+
+  function isDesktopPreferred(url) {
+    const lower = (url || '').toLowerCase();
+    return (
+      lower.includes('youtube.com') ||
+      lower.includes('youtu.be') ||
+      lower.includes('instagram.com') ||
+      lower.includes('tiktok.com') ||
+      lower.includes('twitter.com') ||
+      lower.includes('x.com')
+    );
+  }
+
+  function launchDesktop(url) {
+    const deepLink = `m4k://download?url=${encodeURIComponent(url)}`;
+    if (typeof chrome !== 'undefined' && chrome.tabs && chrome.tabs.create) {
+      chrome.tabs.create({ url: deepLink });
+    } else {
+      window.location.href = deepLink;
+    }
+  }
+
+  if (btnDesktop) {
+    btnDesktop.addEventListener('click', () => {
+      const url = inputUrl.value.trim();
+      if (url) launchDesktop(url);
+    });
+  }
 
   // Detect current active tab URL
   btnDetectTab.addEventListener('click', () => {
@@ -103,7 +132,16 @@ document.addEventListener('DOMContentLoaded', () => {
   function triggerAnalysis(url) {
     resultCard.classList.remove('hidden');
     resultTitle.textContent = 'Analyzing media stream...';
-    resultMeta.textContent = 'Connecting to api4k.mahiskills.in...';
+    resultMeta.textContent = 'Checking format availability...';
+
+    if (isDesktopPreferred(url)) {
+      if (btnDesktop) {
+        btnDesktop.style.display = 'flex';
+        btnDesktop.textContent = '⚡ Open in Desktop App (4K Recommended)';
+      }
+    } else {
+      if (btnDesktop) btnDesktop.style.display = 'none';
+    }
 
     fetch(`${API_BASE}/analyze`, {
       method: 'POST',
@@ -120,12 +158,18 @@ document.addEventListener('DOMContentLoaded', () => {
           btnDownload.textContent = `Download ${topQuality} MP4`;
         } else {
           resultTitle.textContent = 'Media Ready for Download';
-          resultMeta.textContent = 'Quality: 1080p / Best MP4';
+          resultMeta.textContent = isDesktopPreferred(url) 
+            ? 'Desktop App recommended for high-resolution 4K'
+            : 'Quality: 1080p / Best MP4';
         }
       })
       .catch(() => {
-        resultTitle.textContent = 'Ready for Fast Download';
-        resultMeta.textContent = 'Click below to download via My 4K Downloader';
+        resultTitle.textContent = 'Open in My 4K Downloader Desktop';
+        resultMeta.textContent = 'Direct residential extraction for 4K / 1080p';
+        if (btnDesktop) {
+          btnDesktop.style.display = 'flex';
+          btnDesktop.textContent = '⚡ Open in Desktop App (m4k://)';
+        }
       });
   }
 });

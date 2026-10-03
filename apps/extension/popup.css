@@ -189,6 +189,26 @@ body {
   cursor: pointer;
 }
 
+.btn-desktop {
+  width: 100%;
+  padding: 8px;
+  background-color: #0F172A;
+  color: #FFFFFF;
+  border: 1px solid #334155;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.btn-desktop:hover {
+  background-color: #1E293B;
+}
+
 .popup-footer {
   padding: 8px 16px;
   background-color: #F8FAF9;

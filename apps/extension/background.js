@@ -20,11 +20,27 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
     chrome.action.setBadgeText({ text: '1' });
     chrome.action.setBadgeBackgroundColor({ color: '#16A34A' });
 
-    // Open Web app with pre-filled target URL
-    const webAppUrl = 'https://mahi-4k-downloader.pages.dev';
-    chrome.tabs.create({
-      url: `${webAppUrl}/?url=${encodeURIComponent(targetUrl)}`,
-    });
+    const lower = (targetUrl || '').toLowerCase();
+    const isDesktop =
+      lower.includes('youtube.com') ||
+      lower.includes('youtu.be') ||
+      lower.includes('instagram.com') ||
+      lower.includes('tiktok.com') ||
+      lower.includes('twitter.com') ||
+      lower.includes('x.com');
+
+    if (isDesktop) {
+      // Launch native Desktop App via custom protocol
+      chrome.tabs.create({
+        url: `m4k://download?url=${encodeURIComponent(targetUrl)}`,
+      });
+    } else {
+      // Open Web app with pre-filled target URL
+      const webAppUrl = 'https://mahi-4k-downloader.pages.dev';
+      chrome.tabs.create({
+        url: `${webAppUrl}/?url=${encodeURIComponent(targetUrl)}`,
+      });
+    }
   }
 });
 
