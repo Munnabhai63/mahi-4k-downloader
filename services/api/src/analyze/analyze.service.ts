@@ -166,7 +166,7 @@ export class AnalyzeService {
               lowerErr.includes('bot')
             )
           ) {
-            userSafeMsg = 'YouTube temporarily requires additional verification for this video. Please try again later.';
+            userSafeMsg = 'This video is not available for direct download right now. Please try another link.';
           } else if (lowerErr.includes('private video') || lowerErr.includes('this video is private') || lowerErr.includes('only works when logged-in')) {
             userSafeMsg = 'This video is private or requires account login to access.';
           } else if (lowerErr.includes('video unavailable') || lowerErr.includes('does not exist') || lowerErr.includes('not found')) {

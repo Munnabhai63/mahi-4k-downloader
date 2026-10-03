@@ -24,7 +24,7 @@ export function sanitizeUserError(rawMsg: string | undefined | null): string {
     lower.includes('confirm you') ||
     lower.includes('bot verification')
   ) {
-    return 'This video temporarily requires additional verification from the source platform. Please try another video or quality.';
+    return 'This video is not available for direct download right now. Please try another link.';
   }
 
   // Private or restricted content

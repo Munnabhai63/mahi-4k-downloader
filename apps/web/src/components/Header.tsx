@@ -13,19 +13,15 @@ import {
   Globe,
   Menu,
   X,
-  FolderCheck,
-  Folder,
 } from 'lucide-react';
 import { Button } from '@turbograb/ui';
 import { translations, Locale } from '@/lib/i18n';
-import { getActiveDownloadDirectoryName } from '@/lib/downloadFolder';
 
 export const Header: React.FC = () => {
   const pathname = usePathname();
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [lang, setLang] = useState<Locale>('EN');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [folderName, setFolderName] = useState<string | null>(null);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -38,11 +34,6 @@ export const Header: React.FC = () => {
       }
       const savedLang = localStorage.getItem('turbograb_lang') as Locale;
       if (savedLang && (savedLang === 'EN' || savedLang === 'HI')) setLang(savedLang);
-
-      // Check configured download directory
-      getActiveDownloadDirectoryName().then((name) => {
-        setFolderName(name);
-      });
     }
   }, []);
 
@@ -116,24 +107,6 @@ export const Header: React.FC = () => {
 
         {/* Actions Desktop */}
         <div className="flex items-center gap-2.5">
-          {/* Download Folder Quick Pill */}
-          <Link
-            href="/settings"
-            className="hidden lg:flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium text-[#475569] bg-[#F8FAF9] hover:bg-[#F0FDF4] border border-[#E2E8F0] hover:border-[#86EFAC] rounded-full transition-colors"
-            title="Download Save Destination"
-          >
-            {folderName ? (
-              <>
-                <FolderCheck className="w-3.5 h-3.5 text-[#16A34A]" />
-                <span className="truncate max-w-[110px]">{folderName}</span>
-              </>
-            ) : (
-              <>
-                <Folder className="w-3.5 h-3.5 text-[#94A3B8]" />
-                <span>Downloads/</span>
-              </>
-            )}
-          </Link>
 
           {/* Language Switcher Pill */}
           <button
@@ -218,19 +191,6 @@ export const Header: React.FC = () => {
           </div>
 
           <div className="pt-2 border-t border-[#F1F5F9] flex flex-col gap-2">
-            <Link
-              href="/settings"
-              onClick={() => setMobileMenuOpen(false)}
-              className="flex items-center justify-between px-3 py-2 bg-[#F8FAF9] rounded-xl text-xs text-[#475569] font-medium"
-            >
-              <span className="flex items-center gap-1.5">
-                <Folder className="w-4 h-4 text-[#16A34A]" />
-                <span>Save Folder:</span>
-              </span>
-              <span className="font-semibold text-[#0F172A] truncate max-w-[140px]">
-                {folderName || 'Downloads/ (Default)'}
-              </span>
-            </Link>
 
             {userEmail ? (
               <div className="flex items-center justify-between px-3 py-2 bg-[#F0FDF4] rounded-xl text-xs">

@@ -11,14 +11,13 @@ import {
   Gauge,
   Clock,
   HardDrive,
-  FolderCheck,
   Check,
 } from 'lucide-react';
 import { Card, Badge, ProgressBar, Button } from '@turbograb/ui';
 import { DownloadItem, ProgressEventPayload } from '@turbograb/types';
 import { io, Socket } from 'socket.io-client';
 import { getSocketConfig, resolveDownloadUrl } from '@/lib/api';
-import { saveFileToDevice, getActiveDownloadDirectoryName } from '@/lib/downloadFolder';
+import { saveFileToDevice } from '@/lib/downloadFolder';
 import { sanitizeUserError } from '@/lib/errorSanitizer';
 
 interface ActiveDownloadsProps {
@@ -37,17 +36,10 @@ export const ActiveDownloads: React.FC<ActiveDownloadsProps> = ({
   const [activeTab, setActiveTab] = useState<'all' | 'active' | 'completed'>('all');
   const [savingId, setSavingId] = useState<string | null>(null);
   const [savedStatus, setSavedStatus] = useState<Record<string, string>>({});
-  const [customFolder, setCustomFolder] = useState<string | null>(null);
 
   useEffect(() => {
     setItems(initialDownloads);
   }, [initialDownloads]);
-
-  useEffect(() => {
-    getActiveDownloadDirectoryName().then((name) => {
-      setCustomFolder(name);
-    });
-  }, []);
 
   // Connect to Socket.IO real-time progress gateway
   useEffect(() => {
@@ -108,17 +100,10 @@ export const ActiveDownloads: React.FC<ActiveDownloadsProps> = ({
     try {
       const res = await saveFileToDevice(streamUrl, suggestedName);
       if (res.success) {
-        if (res.method === 'fsa') {
-          setSavedStatus((prev) => ({
-            ...prev,
-            [item.id]: `Saved to ${res.folderName || 'folder'}: ${res.savedFilename}`,
-          }));
-        } else {
-          setSavedStatus((prev) => ({
-            ...prev,
-            [item.id]: `Saved: ${res.savedFilename}`,
-          }));
-        }
+        setSavedStatus((prev) => ({
+          ...prev,
+          [item.id]: `Saved: ${res.savedFilename}`,
+        }));
       }
     } catch {
       // Fallback native
@@ -170,12 +155,6 @@ export const ActiveDownloads: React.FC<ActiveDownloadsProps> = ({
           <Badge variant="mint" size="sm" className="font-bold">
             {items.length}
           </Badge>
-          {customFolder && (
-            <span className="hidden sm:inline-flex items-center gap-1 text-xs text-[#16A34A] bg-[#F0FDF4] px-2.5 py-0.5 rounded-full font-medium border border-[#DCFCE7]">
-              <FolderCheck className="w-3.5 h-3.5" />
-              <span>Saving to: {customFolder}</span>
-            </span>
-          )}
         </div>
 
         {/* Tab filters */}

@@ -95,43 +95,73 @@ export default function HomePage() {
     setAnalyzeResult(null);
     setBatchResults([]);
 
-    try {
-      const res = await fetch(`${getApiUrl()}/analyze`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url }),
-      });
+    const MAX_RETRIES = 2;
+    let lastError: Error | null = null;
 
-      const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.message || 'Failed to analyze URL.');
-      }
-
-      if (useSmartMode) {
-        let prefQuality: VideoQualityLabel = '1080p';
-        let prefFormat: VideoFormat = 'mp4';
-        if (typeof window !== 'undefined') {
-          const stored = localStorage.getItem('turbograb_settings');
-          if (stored) {
-            try {
-              const parsed = JSON.parse(stored);
-              if (parsed.defaultQuality) prefQuality = parsed.defaultQuality;
-              if (parsed.defaultFormat) prefFormat = parsed.defaultFormat;
-            } catch {}
-          }
+    for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+      try {
+        if (attempt > 0) {
+          // Capped backoff: 800ms, 1600ms
+          await new Promise((resolve) => setTimeout(resolve, Math.min(800 * Math.pow(2, attempt - 1), 2000)));
         }
-        await triggerDownloadJob(data, prefQuality, prefFormat);
-      } else {
-        setAnalyzeResult(data);
+
+        const res = await fetch(`${getApiUrl()}/analyze`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ url }),
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+          // If 400 Bad Request (e.g. Unsupported link, private, not available), don't retry
+          if (res.status === 400) {
+            throw new Error(data.message || 'Unsupported link.');
+          }
+          throw new Error(data.message || 'Server temporarily busy.');
+        }
+
+        if (useSmartMode) {
+          let prefQuality: VideoQualityLabel = '1080p';
+          let prefFormat: VideoFormat = 'mp4';
+          if (typeof window !== 'undefined') {
+            const stored = localStorage.getItem('turbograb_settings');
+            if (stored) {
+              try {
+                const parsed = JSON.parse(stored);
+                if (parsed.defaultQuality) prefQuality = parsed.defaultQuality;
+                if (parsed.defaultFormat) prefFormat = parsed.defaultFormat;
+              } catch {}
+            }
+          }
+          await triggerDownloadJob(data, prefQuality, prefFormat);
+        } else {
+          setAnalyzeResult(data);
+        }
+        setIsAnalyzing(false);
+        return; // Success!
+      } catch (err: any) {
+        lastError = err;
+        const msg = err?.message || '';
+        // Break out of retry if client error or explicit unsupported/blocked message
+        if (
+          msg.includes('Unsupported') ||
+          msg.includes('private') ||
+          msg.includes('unavailable') ||
+          msg.includes('direct download right now') ||
+          msg.includes('restricted')
+        ) {
+          break;
+        }
       }
-    } catch (err: any) {
-      setErrorMessage(
-        sanitizeUserError(err.message || 'Unable to analyze video URL. Please check the link and try again.'),
-      );
-    } finally {
-      setIsAnalyzing(false);
     }
+
+    if (lastError) {
+      setErrorMessage(
+        sanitizeUserError(lastError.message || 'Unable to analyze video URL. Please check the link and try again.'),
+      );
+    }
+    setIsAnalyzing(false);
   };
 
   const handleBatchAnalyze = async (urls: string[]) => {
