@@ -19,8 +19,8 @@ export interface PlatformRouteInfo {
   downloadAppUrl: string;
 }
 
-export const DESKTOP_APP_DOWNLOAD_URL = 'https://github.com/Munnabhai63/mahi-4k-downloader/releases/download/v1.0.1-beta/My_4K_Downloader_1.0.1_x64_Setup.exe';
-export const LOCAL_INSTALLER_PATH = '/My_4K_Downloader_1.0.1_x64_Setup.exe';
+export const DESKTOP_APP_DOWNLOAD_URL = 'https://github.com/Munnabhai63/mahi-4k-downloader/releases/download/v1.0.2-beta/My_4K_Downloader_1.0.2_x64_Setup.exe';
+export const LOCAL_INSTALLER_PATH = '/My_4K_Downloader_1.0.2_x64_Setup.exe';
 
 export function normalizeInputUrl(rawInput: string): { url: string; isValidUrl: boolean } {
   const trimmed = (rawInput || '').trim();

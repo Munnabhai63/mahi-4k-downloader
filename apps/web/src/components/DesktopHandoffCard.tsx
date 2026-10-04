@@ -106,7 +106,7 @@ export const DesktopHandoffCard: React.FC<DesktopHandoffCardProps> = ({
         <span>App not installed?</span>
         <a
           href={DESKTOP_APP_DOWNLOAD_URL}
-          download="My_4K_Downloader_1.0.1_x64_Setup.exe"
+          download="My_4K_Downloader_1.0.2_x64_Setup.exe"
           className="font-bold text-[#16A34A] hover:text-[#15803D] hover:underline flex items-center gap-1 transition-colors"
           title="Download Windows Installer"
         >

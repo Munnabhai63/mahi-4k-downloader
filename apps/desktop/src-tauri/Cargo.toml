@@ -1,6 +1,6 @@
 [package]
 name = "turbograb-desktop"
-version = "1.0.1"
+version = "1.0.2"
 description = "TurboGrab Desktop Universal Video Downloader"
 authors = ["TurboGrab Team"]
 edition = "2021"
