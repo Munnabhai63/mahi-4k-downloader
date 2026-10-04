@@ -112,6 +112,7 @@ export default function HomePage() {
     format: VideoFormat = 'mp4',
     subtitleLang?: string,
   ) => {
+    const selectedQualityOption = result.qualities?.find((q) => q.label === quality);
     const res = await executeApiRequest('/downloads', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -120,6 +121,8 @@ export default function HomePage() {
         quality,
         format,
         subtitleLang,
+        formatId: selectedQualityOption?.formatId,
+        directUrl: selectedQualityOption?.directUrl || (result as any).directDownloadUrl,
       }),
     });
 

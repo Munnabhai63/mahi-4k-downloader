@@ -28,47 +28,14 @@ export function getApiBaseUrl(): string {
 }
 
 /**
- * Executes an API request with transparent failover between local and remote backends
+ * Executes an API request against the configured backend
  */
 export async function executeApiRequest(endpoint: string, options: RequestInit): Promise<Response> {
   const primaryBase = getApiBaseUrl();
   const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
   const primaryUrl = `${primaryBase}${cleanEndpoint}`;
 
-  try {
-    const res = await fetch(primaryUrl, options);
-    if (res.ok) return res;
-
-    // If primary returned 400 with residential access warning or 503/500, attempt secondary backend
-    const isLocal = primaryBase.includes('localhost') || primaryBase.includes('127.0.0.1');
-    const altBase = isLocal ? `${PRODUCTION_DEFAULT_BACKEND}/api/v1` : 'http://localhost:4000/api/v1';
-    const altUrl = `${altBase}${cleanEndpoint}`;
-
-    try {
-      const altRes = await fetch(altUrl, {
-        ...options,
-        signal: AbortSignal.timeout(6000),
-      });
-      if (altRes.ok) return altRes;
-    } catch {}
-
-    return res;
-  } catch (err) {
-    // Primary network failed (e.g. port not listening or remote offline)
-    const isLocal = primaryBase.includes('localhost') || primaryBase.includes('127.0.0.1');
-    const altBase = isLocal ? `${PRODUCTION_DEFAULT_BACKEND}/api/v1` : 'http://localhost:4000/api/v1';
-    const altUrl = `${altBase}${cleanEndpoint}`;
-
-    try {
-      const altRes = await fetch(altUrl, {
-        ...options,
-        signal: AbortSignal.timeout(10000),
-      });
-      return altRes;
-    } catch {
-      throw err;
-    }
-  }
+  return await fetch(primaryUrl, options);
 }
 
 /**

@@ -55,6 +55,8 @@ export interface QualityOption {
   estimatedBytes?: number;
   formatNote?: string;
   fps?: number;
+  formatId?: string;
+  directUrl?: string;
 }
 
 export interface PlaylistItem {
@@ -95,6 +97,8 @@ export interface CreateDownloadRequest {
   format: VideoFormat;
   subtitleLang?: string;
   useCookies?: boolean;
+  formatId?: string;
+  directUrl?: string;
 }
 
 export interface DownloadItem {
@@ -119,6 +123,8 @@ export interface DownloadItem {
   signedUrl?: string;
   createdAt: string;
   completedAt?: string;
+  formatId?: string;
+  directUrl?: string;
 }
 
 export interface ProgressEventPayload {

@@ -181,7 +181,9 @@ export class AnalyzeService {
           const lowerErr = rawErr.toLowerCase();
           let userSafeMsg = 'Unable to download this link right now.';
 
-          if (lowerErr.includes('private video') || lowerErr.includes('this video is private') || lowerErr.includes('only works when logged-in')) {
+          if (lowerErr.includes('not a bot') || lowerErr.includes('sign in to confirm')) {
+            userSafeMsg = 'Unable to download this link right now.';
+          } else if (lowerErr.includes('private video') || lowerErr.includes('this video is private') || lowerErr.includes('only works when logged-in')) {
             userSafeMsg = 'This video is private or restricted by its author.';
           } else if (lowerErr.includes('video unavailable') || lowerErr.includes('does not exist') || lowerErr.includes('not found') || lowerErr.includes('404')) {
             userSafeMsg = 'This video is unavailable or has been removed.';

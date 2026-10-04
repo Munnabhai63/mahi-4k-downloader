@@ -348,7 +348,10 @@ def analyze_url(url: str, cookie_file: Optional[str] = None) -> Dict[str, Any]:
         "extract_flat": "in_playlist",
         "socket_timeout": 15,
         "extractor_args": {
-            "tiktok": {"api_hostname": ["api22-core-c-useast1a.tiktokv.com"]}
+            "tiktok": {"api_hostname": ["api22-core-c-useast1a.tiktokv.com"]},
+            "youtubepot-bgutilhttp": {
+                "base_url": [os.getenv("POT_PROVIDER_URL", "http://mahi_pot_provider:4416" if os.path.exists("/.dockerenv") else "http://127.0.0.1:4416")]
+            }
         }
     }
 
@@ -474,23 +477,27 @@ def analyze_url(url: str, cookie_file: Optional[str] = None) -> Dict[str, Any]:
                     bitrates = {4320: 35000, 2160: 16000, 1440: 8000, 1080: 4500, 720: 2500, 480: 1200, 360: 700}
                     estimated_bytes = int(bitrates.get(h, 2000) * 1000 / 8 * total_duration)
 
+                format_id = matched_format.get("format_id") if matched_format else None
                 qualities.append({
                     "label": label,
                     "height": h,
                     "available": True,
                     "estimatedBytes": estimated_bytes,
                     "formatNote": f"{h}p Ultra HD" if h >= 1440 else f"{h}p HD" if h >= 720 else f"{h}p SD",
-                    "fps": 60 if h >= 1080 else 30
+                    "fps": 60 if h >= 1080 else 30,
+                    "formatId": format_id
                 })
 
         if has_audio:
+            best_audio = audio_formats[0] if audio_formats else None
             qualities.append({
                 "label": "Audio",
                 "height": 0,
                 "available": True,
                 "estimatedBytes": int(total_duration * 320 * 1024 / 8),
                 "formatNote": "High Quality 320kbps MP3",
-                "fps": 0
+                "fps": 0,
+                "formatId": best_audio.get("format_id") if best_audio else None
             })
 
     # Subtitles extraction
@@ -634,8 +641,14 @@ def download_video(spec: Dict[str, Any]):
             }
             print("__PROGRESS__:" + json.dumps(payload), flush=True)
 
-    # Format selector mapping per §6.3 of MASTER_PROMPT.md with robust /best fallback
-    if quality == "Audio" or target_format in ["mp3", "m4a", "ogg", "wav"]:
+    # Format selector mapping using verified formatId if provided, or resolution selector fallback
+    format_id = spec.get("formatId")
+    if format_id:
+        if quality == "Audio" or target_format in ["mp3", "m4a", "ogg", "wav"]:
+            format_selector = f"{format_id}/bestaudio/best"
+        else:
+            format_selector = f"{format_id}+bestaudio/{format_id}/best"
+    elif quality == "Audio" or target_format in ["mp3", "m4a", "ogg", "wav"]:
         format_selector = "bestaudio/best"
     elif quality == "8K":
         format_selector = "bestvideo[height<=4320]+bestaudio/best[height<=4320]/best"
@@ -662,13 +675,19 @@ def download_video(spec: Dict[str, Any]):
         "no_warnings": True,
         "progress_hooks": [progress_hook],
         "extractor_args": {
-            "tiktok": {"api_hostname": ["api22-core-c-useast1a.tiktokv.com"]}
+            "tiktok": {"api_hostname": ["api22-core-c-useast1a.tiktokv.com"]},
+            "youtubepot-bgutilhttp": {
+                "base_url": [os.getenv("POT_PROVIDER_URL", "http://mahi_pot_provider:4416" if os.path.exists("/.dockerenv") else "http://127.0.0.1:4416")]
+            }
         }
     }
 
     if HAVE_IMPERSONATE:
         try:
-            ydl_opts["impersonate"] = ImpersonateTarget.from_str("chrome")
+            if platform in ("dailymotion", "generic"):
+                ydl_opts["impersonate"] = ImpersonateTarget.from_str("chrome")
+            elif platform == "reddit":
+                ydl_opts["impersonate"] = ImpersonateTarget.from_str("firefox")
         except Exception:
             pass
 

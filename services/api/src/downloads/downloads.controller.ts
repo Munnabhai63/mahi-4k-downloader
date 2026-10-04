@@ -34,6 +34,12 @@ export class CreateDownloadDto implements CreateDownloadRequest {
 
   @ApiProperty({ description: 'Use user cookies', required: false })
   useCookies?: boolean;
+
+  @ApiProperty({ description: 'Specific format ID', required: false })
+  formatId?: string;
+
+  @ApiProperty({ description: 'Direct media download URL', required: false })
+  directUrl?: string;
 }
 
 @ApiTags('Downloads')

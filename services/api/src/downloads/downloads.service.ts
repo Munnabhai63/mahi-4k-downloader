@@ -165,6 +165,8 @@ export class DownloadsService {
       totalBytes: 0,
       downloadedBytes: 0,
       createdAt: new Date().toISOString(),
+      formatId: dto.formatId,
+      directUrl: dto.directUrl,
     };
 
     this.downloads.set(downloadId, item);
@@ -236,6 +238,8 @@ export class DownloadsService {
       outputDir: this.tempStoragePath,
       subtitleLang,
       cookieFile,
+      formatId: item.formatId,
+      directUrl: item.directUrl,
     };
 
     const child = spawn(
