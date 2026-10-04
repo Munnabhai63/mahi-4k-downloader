@@ -278,16 +278,16 @@ export default function SettingsPage() {
           {/* Platform Guide */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-4 pt-3 border-t border-[#F1F5F9] text-xs text-[#64748B]">
             <div className="p-3 bg-white rounded-lg border border-[#F1F5F9]">
-              <span className="font-bold text-[#0F172A] block mb-0.5">Web / Mobile / PWA</span>
-              <span>100% native browser download delivery. Zero permission prompts required.</span>
+              <span className="font-bold text-[#0F172A] block mb-0.5">Desktop Browsers</span>
+              <span>Direct native downloads in Chrome, Edge, Firefox, Brave, and Safari.</span>
             </div>
             <div className="p-3 bg-white rounded-lg border border-[#F1F5F9]">
-              <span className="font-bold text-[#0F172A] block mb-0.5">Desktop / Tauri App</span>
-              <span>Automatically saves into <code className="bg-slate-100 px-1 py-0.5 rounded text-[11px]">Downloads/My 4K Downloader</code> with duplicate protection.</span>
+              <span className="font-bold text-[#0F172A] block mb-0.5">Mobile & Tablet</span>
+              <span>Fully responsive web experience optimized for iOS Safari and Android Chrome.</span>
             </div>
             <div className="p-3 bg-white rounded-lg border border-[#F1F5F9]">
-              <span className="font-bold text-[#0F172A] block mb-0.5">Chrome / Edge Extension</span>
-              <span>Uses browser downloads API targeting <code className="bg-slate-100 px-1 py-0.5 rounded text-[11px]">My 4K Downloader/</code> folder directly.</span>
+              <span className="font-bold text-[#0F172A] block mb-0.5">Zero Footprint</span>
+              <span>No local installations, no extensions, and no background services needed.</span>
             </div>
           </div>
         </Card>

@@ -11,7 +11,7 @@ export const PlatformRow: React.FC<PlatformRowProps> = ({ onSelectPlatform }) =>
     {
       id: 'youtube',
       name: 'YouTube',
-      badge: '4K Desktop',
+      badge: 'Web Beta',
       sampleUrl: 'https://www.youtube.com/watch?v=nLKKoMptkOk',
       glowShadow: '0 12px 28px -4px rgba(255, 0, 0, 0.5), 0 0 20px rgba(255, 0, 0, 0.35)',
       activeBorder: 'hover:border-red-500/60',
@@ -102,7 +102,7 @@ export const PlatformRow: React.FC<PlatformRowProps> = ({ onSelectPlatform }) =>
     {
       id: 'instagram',
       name: 'Instagram',
-      badge: 'HD Desktop',
+      badge: 'Limited',
       sampleUrl: 'https://www.instagram.com/reel/C8t1M2UvQ6-/',
       glowShadow: '0 12px 28px -4px rgba(225, 48, 108, 0.5), 0 0 20px rgba(250, 126, 30, 0.35)',
       activeBorder: 'hover:border-pink-500/60',
@@ -137,7 +137,7 @@ export const PlatformRow: React.FC<PlatformRowProps> = ({ onSelectPlatform }) =>
     {
       id: 'tiktok',
       name: 'TikTok',
-      badge: 'HD Desktop',
+      badge: 'Limited',
       sampleUrl: 'https://www.tiktok.com/@tiktok/video/7106594312292453678',
       glowShadow: '0 12px 28px -4px rgba(0, 242, 254, 0.5), 0 0 20px rgba(254, 9, 121, 0.4)',
       activeBorder: 'hover:border-cyan-400/60',
@@ -175,7 +175,7 @@ export const PlatformRow: React.FC<PlatformRowProps> = ({ onSelectPlatform }) =>
     {
       id: 'x',
       name: 'X (Twitter)',
-      badge: 'Media Desktop',
+      badge: 'Limited',
       sampleUrl: 'https://x.com/Twitter/status/1274062719266185217',
       glowShadow: '0 12px 28px -4px rgba(255, 255, 255, 0.4), 0 0 20px rgba(148, 163, 184, 0.4)',
       activeBorder: 'hover:border-slate-500/60',
@@ -214,7 +214,7 @@ export const PlatformRow: React.FC<PlatformRowProps> = ({ onSelectPlatform }) =>
       <div className="flex items-center justify-center gap-3 mb-6">
         <div className="h-px w-10 sm:w-16 bg-gradient-to-r from-transparent to-[#CBD5E1]" />
         <span className="text-[11px] sm:text-xs font-extrabold uppercase tracking-widest text-[#64748B] flex items-center gap-1.5">
-          <span>⚡</span> Supported Platforms & Hybrid Engine
+          <span>⚡</span> Supported Platforms
         </span>
         <div className="h-px w-10 sm:w-16 bg-gradient-to-l from-transparent to-[#CBD5E1]" />
       </div>
@@ -245,8 +245,14 @@ export const PlatformRow: React.FC<PlatformRowProps> = ({ onSelectPlatform }) =>
               {p.name}
             </span>
 
-            {/* Truthful Engine Capability Badge */}
-            <span className="text-[10px] font-bold text-[#16A34A] bg-[#DCFCE7] px-2 py-0.5 rounded-full mt-1.5 shrink-0">
+            {/* Web capability badge */}
+            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full mt-1.5 shrink-0 ${
+              p.badge === 'Limited'
+                ? 'text-amber-700 bg-amber-50'
+                : p.badge === 'Web Beta'
+                ? 'text-blue-700 bg-blue-50'
+                : 'text-[#16A34A] bg-[#DCFCE7]'
+            }`}>
               {p.badge}
             </span>
           </button>

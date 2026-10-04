@@ -1,34 +1,30 @@
 'use client';
 
 import React, { useState } from 'react';
-import { 
-  Zap, 
-  ShieldCheck, 
-  Layers, 
-  Music, 
-  Sliders, 
-  Globe, 
-  Sparkles,
+import {
+  Zap,
+  ShieldCheck,
+  Layers,
+  Music,
+  Globe,
   ChevronDown,
   X,
   Loader2,
-  Download
 } from 'lucide-react';
 import { Card } from '@turbograb/ui';
 import { PasteBar } from '@/components/PasteBar';
 import { PlatformRow } from '@/components/PlatformRow';
 import { VideoPreviewCard } from '@/components/VideoPreviewCard';
 import { ActiveDownloads } from '@/components/ActiveDownloads';
-import { 
-  AnalyzeResult, 
-  DownloadItem, 
-  VideoQualityLabel, 
-  VideoFormat 
+import {
+  AnalyzeResult,
+  DownloadItem,
+  VideoQualityLabel,
+  VideoFormat,
 } from '@turbograb/types';
-import { getApiBaseUrl, executeApiRequest } from '@/lib/api';
+import { executeApiRequest } from '@/lib/api';
 import { sanitizeUserError } from '@/lib/errorSanitizer';
-import { DesktopHandoffCard } from '@/components/DesktopHandoffCard';
-import { detectPlatformRoute, PlatformRouteInfo } from '@/lib/routing';
+import { Sparkles } from 'lucide-react';
 
 export default function HomePage() {
   const [openFaq, setOpenFaq] = useState<number | null>(null);
@@ -36,53 +32,17 @@ export default function HomePage() {
   const [analyzeResult, setAnalyzeResult] = useState<AnalyzeResult | null>(null);
   const [batchResults, setBatchResults] = useState<AnalyzeResult[]>([]);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [desktopHandoff, setDesktopHandoff] = useState<{ route: PlatformRouteInfo; url: string } | null>(null);
   const [activeDownloads, setActiveDownloads] = useState<DownloadItem[]>([]);
   const [isStartingDownload, setIsStartingDownload] = useState<boolean>(false);
   const [lastAttemptedUrl, setLastAttemptedUrl] = useState<string>('');
 
-  const [dynamicConfig, setDynamicConfig] = useState<{
-    siteTitle: string;
-    heroHeadline: string;
-    heroSubtitle: string;
-    creatorName: string;
-    announcementNotice: string;
+  const [dynamicConfig] = useState<{
     announcementBanner: { enabled: boolean; message: string; level: string };
-    studentDailyLimit: number;
-    freeDailyLimit: number;
   }>({
-    siteTitle: 'My 4K Downloader',
-    heroHeadline: 'My 4K Downloader',
-    heroSubtitle: 'Free 4K Video Downloader. Fast, ad-free downloads in 4K & MP3. Paste any link below to begin.',
-    creatorName: 'My 4K Downloader',
-    announcementNotice: 'Official My 4K Downloader',
     announcementBanner: { enabled: false, message: '', level: 'info' },
-    studentDailyLimit: 99999,
-    freeDailyLimit: 99999,
   });
 
-  const getApiUrl = () => {
-    return getApiBaseUrl();
-  };
-
-  React.useEffect(() => {
-    fetch(`${getApiUrl()}/admin/public-config`)
-      .then((res) => (res.ok ? res.json() : null))
-      .then((cfg) => {
-        if (cfg) {
-          setDynamicConfig((prev) => ({
-            ...prev,
-            ...cfg,
-            // Keep default hero clean unless specifically customized
-            heroHeadline: cfg.heroHeadline && cfg.heroHeadline !== 'Download Any Video. Fast & Free.' ? cfg.heroHeadline : 'Download Any Video in 4K & MP3',
-            heroSubtitle: cfg.heroSubtitle && !cfg.heroSubtitle.includes('HD & MP3 with Mahi') ? cfg.heroSubtitle : 'Fast, ad-free downloads by Munna Bhai. Paste any link below to begin.',
-          }));
-        }
-      })
-      .catch(() => {});
-  }, []);
-
-  const handleAnalyze = async (url: string, useSmartMode: boolean = false, forceWeb: boolean = false) => {
+  const handleAnalyze = async (url: string) => {
     const trimmedUrl = (url || '').trim();
     if (!trimmedUrl) return;
 
@@ -90,27 +50,7 @@ export default function HomePage() {
     setAnalyzeResult(null);
     setBatchResults([]);
     setLastAttemptedUrl(trimmedUrl);
-
-    // Fast Authoritative Platform Routing
-    const route = detectPlatformRoute(trimmedUrl);
-
-    // If DESKTOP_PREFERRED and not explicitly forced to try web
-    if (route.engine === 'DESKTOP_PREFERRED' && !forceWeb) {
-      setDesktopHandoff({ route, url: trimmedUrl });
-      setIsAnalyzing(false);
-
-      // Silently fire protocol handoff to desktop app if installed
-      if (typeof window !== 'undefined') {
-        try {
-          window.location.href = route.deepLink;
-        } catch {}
-      }
-      return;
-    }
-
-    // Otherwise, run cloud web analysis
     setIsAnalyzing(true);
-    setDesktopHandoff(null);
 
     try {
       const res = await executeApiRequest('/analyze', {
@@ -125,42 +65,11 @@ export default function HomePage() {
         throw new Error(data.message || 'Unable to download this link right now.');
       }
 
-      if (useSmartMode) {
-        let prefQuality: VideoQualityLabel = '1080p';
-        let prefFormat: VideoFormat = 'mp4';
-        if (typeof window !== 'undefined') {
-          const stored = localStorage.getItem('turbograb_settings');
-          if (stored) {
-            try {
-              const parsed = JSON.parse(stored);
-              if (parsed.defaultQuality) prefQuality = parsed.defaultQuality;
-              if (parsed.defaultFormat) prefFormat = parsed.defaultFormat;
-            } catch {}
-          }
-        }
-        await triggerDownloadJob(data, prefQuality, prefFormat);
-      } else {
-        setAnalyzeResult(data);
-      }
+      setAnalyzeResult(data);
     } catch (err: any) {
-      const errLower = (err.message || '').toLowerCase();
-      // If web failed on a platform with datacenter/bot restrictions, offer clean Desktop handoff
-      if (
-        route.engine === 'DESKTOP_PREFERRED' ||
-        errLower.includes('bot') ||
-        errLower.includes('sign in') ||
-        errLower.includes('cookies') ||
-        errLower.includes('login_required') ||
-        errLower.includes('temporarily requires') ||
-        errLower.includes('restricts cloud')
-      ) {
-        setDesktopHandoff({ route, url: trimmedUrl });
-        setErrorMessage(null);
-      } else {
-        setErrorMessage(
-          sanitizeUserError(err.message || 'Unable to analyze video URL. Please check the link and try again.'),
-        );
-      }
+      setErrorMessage(
+        sanitizeUserError(err.message || 'This media is currently unavailable for direct download.'),
+      );
     } finally {
       setIsAnalyzing(false);
     }
@@ -188,10 +97,10 @@ export default function HomePage() {
       if (data.results && data.results.length > 0) {
         setBatchResults(data.results);
       } else if (data.errors && data.errors.length > 0) {
-        throw new Error(`Failed to analyze URLs: ${data.errors[0].error}`);
+        throw new Error(sanitizeUserError(data.errors[0].error));
       }
     } catch (err: any) {
-      setErrorMessage(sanitizeUserError(err.message || 'Failed to analyze batch URLs.'));
+      setErrorMessage(sanitizeUserError(err.message || 'This media is currently unavailable for direct download.'));
     } finally {
       setIsAnalyzing(false);
     }
@@ -258,7 +167,7 @@ export default function HomePage() {
         setBatchResults([]);
       }
     } catch (err: any) {
-      setErrorMessage(sanitizeUserError(err.message || 'Failed to queue batch downloads.'));
+      setErrorMessage(sanitizeUserError(err.message || 'This media is currently unavailable for direct download.'));
     } finally {
       setIsStartingDownload(false);
     }
@@ -312,33 +221,33 @@ export default function HomePage() {
   const features = [
     {
       icon: <Zap className="w-5 h-5 text-[#16A34A]" />,
-      title: '4K Desktop & HD Web',
-      desc: 'Pristine 4K video via local Desktop engine; fast 1080p and open media streams on Web.',
+      title: 'Fast Web Downloads',
+      desc: 'Paste any public media link and download instantly — no signup, no software, no waiting.',
     },
     {
       icon: <Globe className="w-5 h-5 text-[#16A34A]" />,
-      title: 'Verified Platforms',
-      desc: 'Facebook, Archive.org, Direct MP4 on Web; YouTube, Instagram, TikTok, and X via Desktop.',
+      title: 'Wide Platform Support',
+      desc: 'Facebook, Dailymotion, Archive.org, Direct MP4/WebM/HLS, and more via a single input.',
     },
     {
       icon: <Music className="w-5 h-5 text-[#16A34A]" />,
-      title: '320kbps MP3 Audio',
-      desc: 'One-click local audio extraction to high-bitrate MP3 or M4A.',
+      title: 'High Quality Audio',
+      desc: 'Extract audio in MP3 and M4A where supported by the source platform.',
     },
     {
       icon: <Layers className="w-5 h-5 text-[#16A34A]" />,
-      title: 'Batch & Playlists',
-      desc: 'Paste multiple links or entire channels for simultaneous multi-thread grabbing.',
-    },
-    {
-      icon: <Sliders className="w-5 h-5 text-[#16A34A]" />,
-      title: 'Local Hybrid Engine',
-      desc: 'Direct residential-speed extraction without cloud datacenter blocks.',
+      title: 'Real Format Detection',
+      desc: 'Only genuine available formats are shown. No fake 4K options for streams that do not support them.',
     },
     {
       icon: <ShieldCheck className="w-5 h-5 text-[#16A34A]" />,
       title: '100% Ad-Free & Clean',
       desc: 'Zero popups, adware, or tracking. Clean, transparent, and private media downloads.',
+    },
+    {
+      icon: <Sparkles className="w-5 h-5 text-[#16A34A]" />,
+      title: 'Zero Installation',
+      desc: 'Runs fully in your browser. No extension, no desktop app, no configuration required.',
     },
   ];
 
@@ -346,52 +255,56 @@ export default function HomePage() {
     {
       step: '01',
       title: 'Paste Link',
-      desc: 'Copy any video, reel, or audio URL into the search bar.',
+      desc: 'Copy any public video or audio URL and paste it into the input above.',
     },
     {
       step: '02',
       title: 'Select Quality',
-      desc: 'Choose 4K, 1080p, or extract 320kbps MP3 sound.',
+      desc: 'Choose from available real formats — video quality or audio-only.',
     },
     {
       step: '03',
       title: 'Instant Save',
-      desc: 'Direct download to your device without cloud storage retention.',
+      desc: 'Your file downloads directly to your device via your browser.',
     },
   ];
 
   const faqs = [
     {
       q: 'What is My 4K Downloader?',
-      a: 'My 4K Downloader is a high-speed video and audio download ecosystem offering instant web downloads for public open media and an advanced local Desktop App powered by yt-dlp & FFmpeg for pristine 4K video and MP3 audio.',
+      a: 'My 4K Downloader is a free, web-based video downloader. Paste any supported public media link to download video or audio directly to your device — no software installation required.',
     },
     {
       q: 'Is My 4K Downloader free to use?',
-      a: 'Yes, My 4K Downloader is 100% free with no subscriptions, paid tiers, or registration required. You get unlimited high-speed 4K and MP3 downloads with zero intrusive advertisements.',
+      a: 'Yes, completely free with no subscriptions, paid tiers, or registration required.',
     },
     {
-      q: 'How do I download 4K videos using My 4K Downloader?',
-      a: 'For true 4K and high-framerate videos from platforms like YouTube, use our free My 4K Downloader Desktop App. It runs directly on your computer, eliminating datacenter IP restrictions. The web version reliably supports public Facebook videos, Archive.org, and direct MP4/WebM files.',
+      q: 'Which platforms are supported on the website?',
+      a: 'The website supports Facebook public videos, Dailymotion, Archive.org, direct MP4/WebM/HLS streams, and other open media sources. YouTube, Instagram, TikTok, and X are restricted by those platforms when accessed from shared cloud servers.',
     },
     {
-      q: 'Can I download TikTok and Instagram videos?',
-      a: 'Yes! Public TikTok and Instagram reels can be downloaded directly through our Desktop App using local extraction. Private or account-locked media cannot be bypassed.',
+      q: 'Why does YouTube sometimes not work on the website?',
+      a: 'Google actively blocks access from shared cloud server IP addresses to prevent mass downloading. This is a platform restriction, not a bug. Public Facebook videos, Dailymotion, and direct MP4/HLS files work reliably via the web.',
     },
     {
-      q: 'Which video and audio formats are supported?',
-      a: 'My 4K Downloader supports video resolutions up to 4K Ultra HD in MP4 and WebM containers, as well as MP3 (up to 320kbps), M4A, and WAV audio formats.',
+      q: 'Can I download Instagram or TikTok videos?',
+      a: 'Instagram and TikTok use anti-bot systems that block access from shared servers. These platforms are not reliably supported via the web tool.',
     },
     {
-      q: 'Are my downloads and privacy protected?',
-      a: 'Yes. We do not track users or store your downloaded files on cloud servers. Desktop downloads save directly from the provider to your local Downloads folder.',
+      q: 'Which video formats are supported?',
+      a: 'My 4K Downloader supports MP4 and WebM video, HLS streams, and MP3/M4A audio. Available quality options depend on what the source platform actually provides — only real formats are shown.',
+    },
+    {
+      q: 'Are my downloads private?',
+      a: 'Yes. We do not require accounts, do not log your download history, and do not retain your media on our servers.',
     },
   ];
 
   return (
     <div className="flex flex-col items-center">
-      {/* Super Admin Global Announcement Banner (only if real message exists and not test placeholder) */}
-      {dynamicConfig.announcementBanner?.enabled && 
-       dynamicConfig.announcementBanner?.message && 
+      {/* Announcement Banner */}
+      {dynamicConfig.announcementBanner?.enabled &&
+       dynamicConfig.announcementBanner?.message &&
        dynamicConfig.announcementBanner.message !== 'Maintenance test banner' && (
         <div className="w-full bg-[#F0FDF4] border-b border-[#DCFCE7] py-2 px-4 text-center text-xs font-semibold text-[#16A34A] flex items-center justify-center gap-2">
           <Sparkles className="w-3.5 h-3.5" />
@@ -405,10 +318,10 @@ export default function HomePage() {
           My <span className="bg-gradient-to-r from-[#16A34A] to-[#10B981] bg-clip-text text-transparent">4K Downloader</span>
         </h1>
         <p className="text-base sm:text-lg text-[#16A34A] font-bold max-w-xl mx-auto mb-2 font-poppins">
-          Free 4K Video Downloader
+          Free Video Downloader
         </p>
         <p className="text-xs sm:text-sm text-[#64748B] max-w-lg mx-auto mb-8 font-medium">
-          Paste any supported public media link to download high definition video or High Quality 320kbps MP3 audio directly to your device.
+          Paste any supported public media link. Platform detected automatically. Download saves directly to your device.
         </p>
 
         {/* Paste Bar */}
@@ -416,28 +329,14 @@ export default function HomePage() {
           onAnalyze={handleAnalyze}
           onBatchAnalyze={handleBatchAnalyze}
           isLoading={isAnalyzing}
-          onClearError={() => {
-            setErrorMessage(null);
-            setDesktopHandoff(null);
-          }}
+          onClearError={() => setErrorMessage(null)}
         />
 
-        {/* Desktop Handoff Card for Desktop-Preferred Platforms */}
-        {desktopHandoff && (
-          <DesktopHandoffCard
-            route={desktopHandoff.route}
-            url={desktopHandoff.url}
-            onTryWebAnyway={() => handleAnalyze(desktopHandoff.url, false, true)}
-            onDismiss={() => setDesktopHandoff(null)}
-            isWebLoading={isAnalyzing}
-          />
-        )}
-
-        {/* Inline Error & Quick Retry */}
+        {/* Neutral inline error — small, no drama */}
         {errorMessage && (
-          <div className="w-full max-w-xl mx-auto mt-2.5 px-3.5 py-2.5 flex flex-col sm:flex-row items-center justify-between gap-2.5 rounded-xl bg-red-50/80 border border-red-200/90 text-xs text-red-800 animate-in fade-in duration-200 shadow-2xs">
+          <div className="w-full max-w-xl mx-auto mt-3 px-4 py-2.5 flex items-center justify-between gap-2 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-600 animate-in fade-in duration-200">
             <div className="flex items-center gap-2 min-w-0">
-              <span className="w-2 h-2 rounded-full bg-red-500 shrink-0" />
+              <span className="w-1.5 h-1.5 rounded-full bg-slate-400 shrink-0" />
               <span className="font-medium text-left">{errorMessage}</span>
             </div>
             <div className="flex items-center gap-2 shrink-0">
@@ -446,15 +345,15 @@ export default function HomePage() {
                   type="button"
                   onClick={() => handleAnalyze(lastAttemptedUrl)}
                   className="px-3 py-1 bg-[#16A34A] hover:bg-[#15803D] text-white text-[11px] font-bold rounded-lg transition-colors flex items-center gap-1 shadow-xs cursor-pointer"
-                  title="Retry analyzing this video URL"
+                  title="Retry"
                 >
-                  <span>🔄 Retry</span>
+                  <span>Retry</span>
                 </button>
               )}
               <button
                 type="button"
                 onClick={() => setErrorMessage(null)}
-                className="text-red-400 hover:text-red-700 p-1 rounded transition-colors cursor-pointer"
+                className="text-slate-400 hover:text-slate-600 p-1 rounded transition-colors cursor-pointer"
                 title="Dismiss"
               >
                 <X className="w-3.5 h-3.5" />
@@ -463,14 +362,12 @@ export default function HomePage() {
           </div>
         )}
 
-        {/* Single-Column Loading Skeleton */}
+        {/* Loading Skeleton */}
         {isAnalyzing && (
           <div className="w-full max-w-xl mx-auto my-6 p-4 sm:p-5 bg-white rounded-2xl border border-[#E2E8F0] shadow-xs animate-pulse space-y-4">
             <div className="flex items-center gap-2.5 text-[#16A34A]">
               <Loader2 className="w-4 h-4 animate-spin" />
-              <span className="text-xs font-bold">
-                Checking video...
-              </span>
+              <span className="text-xs font-bold">Checking video...</span>
             </div>
             <div className="flex gap-3">
               <div className="w-24 h-16 bg-slate-100 rounded-lg shrink-0" />
@@ -486,7 +383,7 @@ export default function HomePage() {
           </div>
         )}
 
-        {/* Batch Results Card */}
+        {/* Batch Results */}
         {batchResults.length > 0 && (
           <div className="w-full max-w-3xl mx-auto my-6 p-5 bg-white rounded-2xl border-2 border-[#16A34A]/30 shadow-lg text-left animate-in fade-in">
             <div className="flex items-center justify-between pb-3 border-b border-[#E2E8F0]">
@@ -494,9 +391,7 @@ export default function HomePage() {
                 <h3 className="text-base font-bold text-[#0F172A]">
                   Batch Ready ({batchResults.length} Videos)
                 </h3>
-                <p className="text-xs text-[#64748B]">
-                  Click below to queue all simultaneously.
-                </p>
+                <p className="text-xs text-[#64748B]">Click below to queue all simultaneously.</p>
               </div>
               <div className="flex items-center gap-2.5">
                 <button
@@ -529,11 +424,9 @@ export default function HomePage() {
                       referrerPolicy="no-referrer"
                     />
                     <div className="min-w-0">
-                      <div className="text-xs font-bold text-[#0F172A] truncate">
-                        {item.title}
-                      </div>
+                      <div className="text-xs font-bold text-[#0F172A] truncate">{item.title}</div>
                       <div className="text-[11px] text-[#64748B]">
-                        {item.platform} • {item.qualities.find((q) => q.available)?.label || '1080p'}
+                        {item.platform} • {item.qualities.find((q) => q.available)?.label || 'Original'}
                       </div>
                     </div>
                   </div>
@@ -560,22 +453,22 @@ export default function HomePage() {
           />
         )}
 
-        {/* Active & Completed Downloads Telemetry List */}
+        {/* Active & Completed Downloads */}
         <ActiveDownloads
           downloads={activeDownloads}
           onCancel={handleCancelDownload}
           onRetry={handleRetryDownload}
         />
 
-        {/* Realistic 3D Glowing Brand Icons */}
-        <PlatformRow onSelectPlatform={(_name, sampleUrl) => handleAnalyze(sampleUrl, false)} />
+        {/* Platform Row */}
+        <PlatformRow onSelectPlatform={(_name, sampleUrl) => handleAnalyze(sampleUrl)} />
       </section>
 
-      {/* Sleek Minimalist Metrics Bar */}
+      {/* Metrics Bar */}
       <section className="w-full max-w-4xl mx-auto px-4 my-6">
         <div className="p-4 rounded-2xl bg-white/80 backdrop-blur-md border border-[#E2E8F0] shadow-xs grid grid-cols-2 sm:grid-cols-4 gap-4 text-center">
           <div className="border-r border-[#F1F5F9] last:border-0 sm:last:border-0">
-            <div className="text-xl sm:text-2xl font-black text-[#16A34A] font-poppins">8K & 4K</div>
+            <div className="text-xl sm:text-2xl font-black text-[#16A34A] font-poppins">4K</div>
             <div className="text-[11px] font-semibold text-[#64748B] uppercase tracking-wider mt-0.5">Ultra HD</div>
           </div>
           <div className="sm:border-r border-[#F1F5F9]">
@@ -593,126 +486,14 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Windows Desktop Client (Beta) Showcase Section */}
-      <section id="desktop-app" className="w-full max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 my-8">
-        <div className="bg-gradient-to-br from-[#F0FDF4] via-white to-[#F8FAF9] border-2 border-[#16A34A]/30 rounded-3xl p-6 sm:p-8 shadow-sm">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 border-b border-[#DCFCE7]/70">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-2xl bg-[#DCFCE7] border border-[#86EFAC] flex items-center justify-center text-[#16A34A] shrink-0 shadow-xs">
-                <Sparkles className="w-6 h-6" />
-              </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <h2 className="text-xl sm:text-2xl font-black text-[#0F172A] font-poppins">
-                    My 4K Downloader for Windows
-                  </h2>
-                  <span className="px-2.5 py-0.5 rounded-full text-xs font-black uppercase tracking-wider bg-amber-100 text-amber-800 border border-amber-300 shadow-2xs">
-                    Beta v1.0.0
-                  </span>
-                </div>
-                <p className="text-xs text-[#475569] mt-0.5">
-                  Standalone Desktop Client • Bundled yt-dlp & FFmpeg 9.0 • 0 External Dependencies
-                </p>
-              </div>
-            </div>
-
-            {/* Direct Download Buttons */}
-            <div className="flex flex-wrap sm:flex-nowrap items-center gap-2.5 shrink-0">
-              <a
-                href="https://github.com/Munnabhai63/mahi-4k-downloader/releases/download/v1.0.0-beta/My_4K_Downloader_1.0.0_x64_Setup.exe"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="px-4 py-2.5 bg-[#16A34A] hover:bg-[#15803D] text-white text-xs font-bold rounded-xl shadow-xs transition-colors flex items-center gap-2"
-                title="Download Windows Installer (75.7 MB)"
-              >
-                <Download className="w-4 h-4" />
-                <span>Installer (.exe, 75MB)</span>
-              </a>
-
-              <a
-                href="https://github.com/Munnabhai63/mahi-4k-downloader/releases/download/v1.0.0-beta/My_4K_Downloader_v1.0.0_Portable_x64.zip"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="px-4 py-2.5 bg-white hover:bg-slate-50 border border-[#E2E8F0] text-[#0F172A] text-xs font-bold rounded-xl shadow-2xs transition-colors flex items-center gap-2"
-                title="Download Portable ZIP (102 MB)"
-              >
-                <Download className="w-4 h-4 text-[#16A34A]" />
-                <span>Portable (.zip, 102MB)</span>
-              </a>
-            </div>
-          </div>
-
-          {/* Platform Status Matrix */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-5">
-            {/* Verified Platforms */}
-            <div className="p-4 bg-white/90 rounded-2xl border border-[#86EFAC]/60 shadow-2xs">
-              <div className="flex items-center gap-2 mb-2 text-[#16A34A] font-bold text-xs uppercase tracking-wide">
-                <span className="w-2 h-2 rounded-full bg-[#16A34A]" />
-                <span>Verified Supported Platforms (Beta)</span>
-              </div>
-              <ul className="text-xs text-[#475569] space-y-1.5 leading-relaxed">
-                <li className="flex items-start gap-1.5">
-                  <span className="font-semibold text-slate-800">YouTube:</span>
-                  <span>4K UHD, 1080p Full HD, 720p HD, and High Quality 320kbps MP3 audio extraction.</span>
-                </li>
-                <li className="flex items-start gap-1.5">
-                  <span className="font-semibold text-slate-800">Direct Streams:</span>
-                  <span>Direct public MP4, WebM, and HLS/m3u8 media files.</span>
-                </li>
-                <li className="flex items-start gap-1.5">
-                  <span className="font-semibold text-slate-800">Facebook:</span>
-                  <span>Public video downloads (best-effort availability).</span>
-                </li>
-              </ul>
-            </div>
-
-            {/* Limited / Unverified Notice */}
-            <div className="p-4 bg-white/90 rounded-2xl border border-amber-200/80 shadow-2xs">
-              <div className="flex items-center gap-2 mb-2 text-amber-700 font-bold text-xs uppercase tracking-wide">
-                <span className="w-2 h-2 rounded-full bg-amber-500" />
-                <span>Limited / Not Yet Verified</span>
-              </div>
-              <ul className="text-xs text-[#64748B] space-y-1.5 leading-relaxed">
-                <li className="flex items-start gap-1.5">
-                  <span className="font-semibold text-slate-700">Instagram, TikTok, X (Twitter):</span>
-                  <span>Unauthenticated client access is restricted by platform anti-bot walls or ISP network restrictions.</span>
-                </li>
-                <li className="flex items-start gap-1.5">
-                  <span className="font-semibold text-slate-700">No Private or DRM Media:</span>
-                  <span>Private accounts, login-walled content, and DRM protected streams (Netflix, Prime, Spotify) are strictly not supported.</span>
-                </li>
-              </ul>
-            </div>
-          </div>
-
-          {/* Checksums & Verification Bar */}
-          <div className="mt-4 pt-3 border-t border-[#DCFCE7]/70 flex flex-wrap items-center justify-between text-[11px] text-[#64748B] gap-2">
-            <div className="flex items-center gap-2 font-mono">
-              <span className="font-semibold text-slate-700">SHA-256 Checksums:</span>
-              <a
-                href="https://github.com/Munnabhai63/mahi-4k-downloader/releases/download/v1.0.0-beta/SHA256SUMS.txt"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-[#16A34A] hover:underline"
-              >
-                View SHA256SUMS.txt
-              </a>
-            </div>
-            <div className="text-slate-500">
-              Windows 10 / 11 (x64) • Standalone • No Python or Node.js required
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Decluttered Features Grid */}
+      {/* Features Grid */}
       <section id="features" className="w-full max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-14">
         <div className="text-center max-w-lg mx-auto mb-10">
           <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-[#0F172A] font-poppins mb-2">
             Why Choose My 4K Downloader
           </h2>
           <p className="text-xs sm:text-sm text-[#64748B]">
-            Engineered for high-speed grabbing, maximum clarity, and total privacy.
+            Fast, honest, and completely private media downloads directly in your browser.
           </p>
         </div>
 
@@ -755,15 +536,17 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Educational & Semantic SEO Overview Section */}
+      {/* SEO Educational Section */}
       <section className="w-full max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
         <div className="bg-[#F8FAF9] border border-[#E2E8F0] rounded-3xl p-6 sm:p-10 shadow-xs space-y-6">
           <div className="max-w-3xl">
             <h2 className="text-xl sm:text-2xl font-extrabold text-[#0F172A] font-poppins mb-3">
-              About My 4K Downloader – Free 4K Video Downloader
+              About My 4K Downloader – Free Video Downloader
             </h2>
             <p className="text-xs sm:text-sm text-[#475569] leading-relaxed">
-              <strong>My 4K Downloader</strong> is a web-based, zero-installation video downloader designed to deliver ultra-high-definition video and pristine audio without intrusive ads, artificial rate limits, or bloated desktop software. Paste a link from any major video platform and save your favorite content in stunning 4K UHD, 1080p Full HD, or 320kbps MP3 audio directly to your device.
+              <strong>My 4K Downloader</strong> is a web-based, zero-installation video downloader.
+              Paste any supported public media link and save your content in high-definition video or
+              high-quality audio directly to your device — no accounts, no popups, no software required.
             </p>
           </div>
 
@@ -771,37 +554,44 @@ export default function HomePage() {
             <div className="bg-white p-5 rounded-2xl border border-[#E2E8F0] shadow-2xs">
               <h3 className="text-sm font-bold text-[#0F172A] mb-2 flex items-center gap-2">
                 <span className="w-2 h-2 rounded-full bg-[#16A34A]" />
-                Supported Video Resolutions
+                Web-Supported Sources
               </h3>
               <p className="text-xs text-[#64748B] leading-relaxed">
-                Download in <strong>8K Ultra HD, 4K UHD (2160p), 2K QHD (1440p), 1080p Full HD, 720p HD</strong>, and standard resolutions across MP4, MKV, and WebM containers.
+                Facebook public videos, Dailymotion, Archive.org, direct MP4/WebM files, and HLS/M3U8 streams work reliably via the web tool.
               </p>
             </div>
 
             <div className="bg-white p-5 rounded-2xl border border-[#E2E8F0] shadow-2xs">
               <h3 className="text-sm font-bold text-[#0F172A] mb-2 flex items-center gap-2">
                 <span className="w-2 h-2 rounded-full bg-[#16A34A]" />
-                Studio-Quality Audio Extraction
+                Audio Extraction
               </h3>
               <p className="text-xs text-[#64748B] leading-relaxed">
-                Extract <strong>High Quality 320kbps MP3 audio</strong>, as well as 256kbps, 192kbps, original AAC, and uncompressed WAV audio streams with full metadata.
+                Extract audio in MP3 and M4A formats where the source platform provides an audio-only stream. Only genuine formats are shown.
               </p>
             </div>
 
             <div className="bg-white p-5 rounded-2xl border border-[#E2E8F0] shadow-2xs">
               <h3 className="text-sm font-bold text-[#0F172A] mb-2 flex items-center gap-2">
                 <span className="w-2 h-2 rounded-full bg-[#16A34A]" />
-                Privacy & Zero-Tracking Guarantee
+                Privacy & No Tracking
               </h3>
               <p className="text-xs text-[#64748B] leading-relaxed">
-                Your privacy is paramount. We do not require accounts for standard downloading, never log your download history, and auto-delete temporary stream files every 6 hours.
+                No accounts required. We do not log your download history or retain media files on our servers. Your downloads are yours alone.
               </p>
             </div>
+          </div>
+
+          {/* Honest web limitation notice */}
+          <div className="p-4 bg-white rounded-2xl border border-amber-100">
+            <p className="text-xs text-[#64748B] leading-relaxed">
+              <span className="font-bold text-amber-700">Platform availability note:</span> YouTube, Instagram, TikTok, and X restrict access from shared cloud servers. If a public URL cannot be processed, a short message is shown. Private, DRM-protected, or account-locked content is not supported.
+            </p>
           </div>
         </div>
       </section>
 
-      {/* Clean FAQ Section */}
+      {/* FAQ Section */}
       <section id="faq" className="w-full max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-14">
         <div className="text-center max-w-md mx-auto mb-8">
           <h2 className="text-2xl sm:text-3xl font-bold text-[#0F172A] font-poppins mb-1.5">

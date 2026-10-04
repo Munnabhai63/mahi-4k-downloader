@@ -43,10 +43,10 @@ export const Footer: React.FC = () => {
               Product
             </h4>
             <ul className="space-y-2 text-sm text-[#64748B]">
-              <li><Link href="/" className="hover:text-[#16A34A] transition-colors">Web App</Link></li>
-              <li><Link href="/downloads" className="hover:text-[#16A34A] transition-colors">Downloads</Link></li>
-              <li><a href="#extension" className="hover:text-[#16A34A] transition-colors">Chrome Extension</a></li>
-              <li><a href="#desktop" className="hover:text-[#16A34A] transition-colors">Desktop App (Tauri)</a></li>
+              <li><Link href="/" className="hover:text-[#16A34A] transition-colors">Downloader</Link></li>
+              <li><Link href="/downloads" className="hover:text-[#16A34A] transition-colors">Active Queue</Link></li>
+              <li><Link href="/history" className="hover:text-[#16A34A] transition-colors">Download History</Link></li>
+              <li><Link href="/settings" className="hover:text-[#16A34A] transition-colors">Preferences</Link></li>
             </ul>
           </div>
 

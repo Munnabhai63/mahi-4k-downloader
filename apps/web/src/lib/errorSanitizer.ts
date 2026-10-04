@@ -27,7 +27,7 @@ export function sanitizeUserError(rawMsg: string | undefined | null): string {
     lower.includes('temporarily unavailable') ||
     lower.includes('provider temporarily requires')
   ) {
-    return 'This platform restricts cloud servers. Please use our Desktop App to download directly to your device.';
+    return 'Unable to process this link on web at this moment. The platform may require authentication or temporary restrictions are active.';
   }
 
   // Private or restricted content

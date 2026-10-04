@@ -326,24 +326,13 @@ export const ActiveDownloads: React.FC<ActiveDownloadsProps> = ({
                 </div>
               )}
 
-              {/* Friendly Resolution & Desktop Handoff for Restricted Downloads */}
+              {/* Friendly Error Resolution */}
               {isFailed && (
-                <div className="mt-2.5 text-xs bg-amber-50/90 border border-amber-200/80 p-3 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 animate-in fade-in">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
-                    <span className="font-medium text-amber-900">
-                      {item.errorMsg ? sanitizeUserError(item.errorMsg) : 'Platform restriction encountered.'}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    <a
-                      href={`m4k://download?url=${encodeURIComponent(item.url)}`}
-                      className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 bg-[#16A34A] hover:bg-[#15803D] text-white text-[11px] font-bold rounded-lg shadow-2xs transition-colors"
-                      title="Open directly in My 4K Downloader Desktop App"
-                    >
-                      <span>⚡ Finish in Desktop App</span>
-                    </a>
-                  </div>
+                <div className="mt-2.5 text-xs bg-amber-50/90 border border-amber-200/80 p-3 rounded-xl flex items-center gap-2.5 animate-in fade-in">
+                  <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
+                  <span className="font-medium text-amber-900">
+                    {item.errorMsg ? sanitizeUserError(item.errorMsg) : 'Unable to complete download right now. Please try again later.'}
+                  </span>
                 </div>
               )}
             </Card>
