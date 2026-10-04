@@ -11,6 +11,7 @@ export const PlatformRow: React.FC<PlatformRowProps> = ({ onSelectPlatform }) =>
     {
       id: 'youtube',
       name: 'YouTube',
+      badge: '4K Desktop',
       sampleUrl: 'https://www.youtube.com/watch?v=nLKKoMptkOk',
       glowShadow: '0 12px 28px -4px rgba(255, 0, 0, 0.5), 0 0 20px rgba(255, 0, 0, 0.35)',
       activeBorder: 'hover:border-red-500/60',
@@ -45,6 +46,7 @@ export const PlatformRow: React.FC<PlatformRowProps> = ({ onSelectPlatform }) =>
     {
       id: 'facebook',
       name: 'Facebook',
+      badge: 'Fast Web',
       sampleUrl: 'https://www.facebook.com/watch?v=10153231379946729',
       glowShadow: '0 12px 28px -4px rgba(24, 119, 242, 0.5), 0 0 20px rgba(24, 119, 242, 0.35)',
       activeBorder: 'hover:border-blue-500/60',
@@ -75,6 +77,7 @@ export const PlatformRow: React.FC<PlatformRowProps> = ({ onSelectPlatform }) =>
     {
       id: 'whatsapp',
       name: 'WhatsApp',
+      badge: 'Fast Web',
       sampleUrl: 'https://youtu.be/nLKKoMptkOk',
       glowShadow: '0 12px 28px -4px rgba(37, 211, 102, 0.5), 0 0 20px rgba(37, 211, 102, 0.35)',
       activeBorder: 'hover:border-emerald-500/60',
@@ -99,6 +102,7 @@ export const PlatformRow: React.FC<PlatformRowProps> = ({ onSelectPlatform }) =>
     {
       id: 'instagram',
       name: 'Instagram',
+      badge: 'HD Desktop',
       sampleUrl: 'https://www.instagram.com/reel/C8t1M2UvQ6-/',
       glowShadow: '0 12px 28px -4px rgba(225, 48, 108, 0.5), 0 0 20px rgba(250, 126, 30, 0.35)',
       activeBorder: 'hover:border-pink-500/60',
@@ -133,6 +137,7 @@ export const PlatformRow: React.FC<PlatformRowProps> = ({ onSelectPlatform }) =>
     {
       id: 'tiktok',
       name: 'TikTok',
+      badge: 'HD Desktop',
       sampleUrl: 'https://www.tiktok.com/@tiktok/video/7106594312292453678',
       glowShadow: '0 12px 28px -4px rgba(0, 242, 254, 0.5), 0 0 20px rgba(254, 9, 121, 0.4)',
       activeBorder: 'hover:border-cyan-400/60',
@@ -170,6 +175,7 @@ export const PlatformRow: React.FC<PlatformRowProps> = ({ onSelectPlatform }) =>
     {
       id: 'x',
       name: 'X (Twitter)',
+      badge: 'Media Desktop',
       sampleUrl: 'https://x.com/Twitter/status/1274062719266185217',
       glowShadow: '0 12px 28px -4px rgba(255, 255, 255, 0.4), 0 0 20px rgba(148, 163, 184, 0.4)',
       activeBorder: 'hover:border-slate-500/60',
@@ -219,7 +225,7 @@ export const PlatformRow: React.FC<PlatformRowProps> = ({ onSelectPlatform }) =>
             key={p.id}
             type="button"
             onClick={() => onSelectPlatform && onSelectPlatform(p.name, p.sampleUrl)}
-            className={`group relative flex flex-col items-center justify-center p-4 rounded-2xl bg-white/95 backdrop-blur-md border border-[#E2E8F0] shadow-sm hover:shadow-2xl transition-all duration-300 hover:-translate-y-2.5 active:scale-95 cursor-pointer focus:outline-none ${p.activeBorder}`}
+            className={`group relative flex flex-col items-center justify-center p-3.5 sm:p-4 rounded-2xl bg-white/95 backdrop-blur-md border border-[#E2E8F0] shadow-sm hover:shadow-2xl transition-all duration-300 hover:-translate-y-2.5 active:scale-95 cursor-pointer focus:outline-none ${p.activeBorder}`}
           >
             {/* Ambient 3D Neon Glow floor */}
             <div
@@ -230,13 +236,18 @@ export const PlatformRow: React.FC<PlatformRowProps> = ({ onSelectPlatform }) =>
             />
 
             {/* 3D Realistic Icon */}
-            <div className="mb-2.5 filter drop-shadow-md group-hover:drop-shadow-xl transition-all duration-300">
+            <div className="mb-2 filter drop-shadow-md group-hover:drop-shadow-xl transition-all duration-300">
               {p.icon}
             </div>
 
             {/* Platform Name */}
             <span className="text-xs font-bold text-[#0F172A] group-hover:text-[#16A34A] transition-colors font-poppins text-center">
               {p.name}
+            </span>
+
+            {/* Truthful Engine Capability Badge */}
+            <span className="text-[10px] font-bold text-[#16A34A] bg-[#DCFCE7] px-2 py-0.5 rounded-full mt-1.5 shrink-0">
+              {p.badge}
             </span>
           </button>
         ))}

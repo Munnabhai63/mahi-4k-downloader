@@ -307,7 +307,10 @@ def _extract_with_fallback(
             except Exception as exc:
                 last_error = exc
                 err_msg = str(exc)
-                # Only fail fast if truly permanent AND we're on the last profile
+                # Fail fast if YouTube issues a datacenter bot challenge or permanent restriction
+                err_lower = err_msg.lower()
+                if "not a bot" in err_lower or "sign in to confirm" in err_lower:
+                    raise exc
                 if is_permanent_failure(err_msg) and idx == len(profiles) - 1:
                     raise exc
 

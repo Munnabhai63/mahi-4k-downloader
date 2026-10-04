@@ -26,6 +26,8 @@ import {
 } from '@turbograb/types';
 import { getApiBaseUrl, executeApiRequest } from '@/lib/api';
 import { sanitizeUserError } from '@/lib/errorSanitizer';
+import { DesktopHandoffCard } from '@/components/DesktopHandoffCard';
+import { detectPlatformRoute, PlatformRouteInfo } from '@/lib/routing';
 
 export default function HomePage() {
   const [openFaq, setOpenFaq] = useState<number | null>(null);
@@ -33,6 +35,7 @@ export default function HomePage() {
   const [analyzeResult, setAnalyzeResult] = useState<AnalyzeResult | null>(null);
   const [batchResults, setBatchResults] = useState<AnalyzeResult[]>([]);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [desktopHandoff, setDesktopHandoff] = useState<{ route: PlatformRouteInfo; url: string } | null>(null);
   const [activeDownloads, setActiveDownloads] = useState<DownloadItem[]>([]);
   const [isStartingDownload, setIsStartingDownload] = useState<boolean>(false);
   const [lastAttemptedUrl, setLastAttemptedUrl] = useState<string>('');
@@ -78,18 +81,41 @@ export default function HomePage() {
       .catch(() => {});
   }, []);
 
-  const handleAnalyze = async (url: string, useSmartMode: boolean = false) => {
-    setIsAnalyzing(true);
+  const handleAnalyze = async (url: string, useSmartMode: boolean = false, forceWeb: boolean = false) => {
+    const trimmedUrl = (url || '').trim();
+    if (!trimmedUrl) return;
+
     setErrorMessage(null);
     setAnalyzeResult(null);
     setBatchResults([]);
-    setLastAttemptedUrl(url);
+    setLastAttemptedUrl(trimmedUrl);
+
+    // Fast Authoritative Platform Routing
+    const route = detectPlatformRoute(trimmedUrl);
+
+    // If DESKTOP_PREFERRED and not explicitly forced to try web
+    if (route.engine === 'DESKTOP_PREFERRED' && !forceWeb) {
+      setDesktopHandoff({ route, url: trimmedUrl });
+      setIsAnalyzing(false);
+
+      // Silently fire protocol handoff to desktop app if installed
+      if (typeof window !== 'undefined') {
+        try {
+          window.location.href = route.deepLink;
+        } catch {}
+      }
+      return;
+    }
+
+    // Otherwise, run cloud web analysis
+    setIsAnalyzing(true);
+    setDesktopHandoff(null);
 
     try {
       const res = await executeApiRequest('/analyze', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url }),
+        body: JSON.stringify({ url: trimmedUrl }),
       });
 
       const data = await res.json();
@@ -116,9 +142,24 @@ export default function HomePage() {
         setAnalyzeResult(data);
       }
     } catch (err: any) {
-      setErrorMessage(
-        sanitizeUserError(err.message || 'Unable to analyze video URL. Please check the link and try again.'),
-      );
+      const errLower = (err.message || '').toLowerCase();
+      // If web failed on a platform with datacenter/bot restrictions, offer clean Desktop handoff
+      if (
+        route.engine === 'DESKTOP_PREFERRED' ||
+        errLower.includes('bot') ||
+        errLower.includes('sign in') ||
+        errLower.includes('cookies') ||
+        errLower.includes('login_required') ||
+        errLower.includes('temporarily requires') ||
+        errLower.includes('restricts cloud')
+      ) {
+        setDesktopHandoff({ route, url: trimmedUrl });
+        setErrorMessage(null);
+      } else {
+        setErrorMessage(
+          sanitizeUserError(err.message || 'Unable to analyze video URL. Please check the link and try again.'),
+        );
+      }
     } finally {
       setIsAnalyzing(false);
     }
@@ -374,8 +415,22 @@ export default function HomePage() {
           onAnalyze={handleAnalyze}
           onBatchAnalyze={handleBatchAnalyze}
           isLoading={isAnalyzing}
-          onClearError={() => setErrorMessage(null)}
+          onClearError={() => {
+            setErrorMessage(null);
+            setDesktopHandoff(null);
+          }}
         />
+
+        {/* Desktop Handoff Card for Desktop-Preferred Platforms */}
+        {desktopHandoff && (
+          <DesktopHandoffCard
+            route={desktopHandoff.route}
+            url={desktopHandoff.url}
+            onTryWebAnyway={() => handleAnalyze(desktopHandoff.url, false, true)}
+            onDismiss={() => setDesktopHandoff(null)}
+            isWebLoading={isAnalyzing}
+          />
+        )}
 
         {/* Inline Error & Quick Retry */}
         {errorMessage && (
