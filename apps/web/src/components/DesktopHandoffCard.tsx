@@ -105,14 +105,10 @@ export const DesktopHandoffCard: React.FC<DesktopHandoffCardProps> = ({
       <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-[#64748B]">
         <span>App not installed?</span>
         <a
-          href={LOCAL_INSTALLER_PATH}
+          href={DESKTOP_APP_DOWNLOAD_URL}
           download="My_4K_Downloader_1.0.0_x64_Setup.exe"
           className="font-bold text-[#16A34A] hover:text-[#15803D] hover:underline flex items-center gap-1 transition-colors"
           title="Download Windows Installer"
-          onError={(e) => {
-            // Fallback to GitHub Releases if local path fails
-            (e.currentTarget as HTMLAnchorElement).href = DESKTOP_APP_DOWNLOAD_URL;
-          }}
         >
           <span>Get My 4K Downloader for Windows</span>
           <Download className="w-3.5 h-3.5" />
