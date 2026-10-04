@@ -71,9 +71,14 @@ export default function App() {
 
         if (payload.status === 'DOWNLOADING') {
           setDownloading(true);
-          setProgress(Math.round(payload.progress || 0));
-          if (payload.speedStr) setDownloadSpeed(payload.speedStr);
-          if (payload.etaStr) setDownloadEta(payload.etaStr);
+          const rawProg = typeof payload.progress === 'number' ? payload.progress : 0;
+          setProgress(Math.max(1, Math.min(100, Math.round(rawProg))));
+          if (payload.speedStr && typeof payload.speedStr === 'string') {
+            setDownloadSpeed(payload.speedStr.trim());
+          }
+          if (payload.etaStr && typeof payload.etaStr === 'string') {
+            setDownloadEta(payload.etaStr.trim());
+          }
         } else if (payload.status === 'COMPLETED') {
           setDownloading(false);
           setProgress(100);
@@ -150,10 +155,10 @@ export default function App() {
       try {
         const res = await invoke<AnalyzeResult>('analyze_local', { url: toAnalyze });
         setMetadata(res);
-        // Default to 1080p Full HD if available, otherwise best <= 1080p, or first available
-        const best = res.qualities.find(q => q.available && q.height === 1080)?.label
-          || res.qualities.find(q => q.available && q.height <= 1080 && q.height > 0)?.label
-          || res.qualities.find(q => q.available)?.label
+        const qualitiesList = Array.isArray(res?.qualities) ? res.qualities : [];
+        const best = qualitiesList.find(q => q.available && q.height === 1080)?.label
+          || qualitiesList.find(q => q.available && q.height && q.height <= 1080 && q.height > 0)?.label
+          || qualitiesList.find(q => q.available)?.label
           || 'Original';
         setSelectedQuality(best);
       } catch (err: any) {
@@ -354,7 +359,9 @@ export default function App() {
                   </div>
                   <div className="flex flex-wrap gap-1.5">
                     {metadata.qualities.filter(q => q.available).map((q) => {
-                      const sizeMb = q.estimatedBytes ? Math.round(q.estimatedBytes / (1024 * 1024)) : null;
+                      const sizeMb = q.estimatedBytes && q.estimatedBytes > 0
+                        ? Math.round(q.estimatedBytes / (1024 * 1024))
+                        : null;
                       return (
                         <button
                           key={q.label}
@@ -367,11 +374,11 @@ export default function App() {
                           }`}
                         >
                           <span>{q.label}</span>
-                          {sizeMb !== null && (
-                            <span className={`text-[10px] font-normal ${selectedQuality === q.label ? 'text-emerald-100' : 'text-slate-500'}`}>
-                              (~{sizeMb >= 1024 ? `${(sizeMb / 1024).toFixed(1)} GB` : `${sizeMb} MB`})
-                            </span>
-                          )}
+                          <span className={`text-[10px] font-normal ${selectedQuality === q.label ? 'text-emerald-100' : 'text-slate-500'}`}>
+                            {sizeMb !== null && sizeMb > 0
+                              ? `(~${sizeMb >= 1024 ? (sizeMb / 1024).toFixed(1) + ' GB' : sizeMb + ' MB'})`
+                              : '(~size unknown)'}
+                          </span>
                           {q.height >= 2160 && (
                             <span className={`text-[9px] px-1 py-0.2 rounded font-bold uppercase ${selectedQuality === q.label ? 'bg-emerald-800 text-white' : 'bg-amber-100 text-amber-800'}`}>
                               4K
@@ -381,7 +388,7 @@ export default function App() {
                       );
                     })}
                   </div>
-                  {(selectedQuality === '4K' || selectedQuality === '8K') && (
+                  {Boolean(selectedQuality && (selectedQuality === '4K' || selectedQuality === '8K')) && (
                     <div className="mt-2 px-3 py-2 bg-amber-50 border border-amber-200 text-[11px] text-amber-800 rounded-xl flex items-center gap-1.5">
                       <AlertCircle className="w-3.5 h-3.5 shrink-0 text-amber-600" />
                       <span>
@@ -490,7 +497,7 @@ export default function App() {
               ) : (
                 <>
                   <Download className="w-4 h-4 mr-2" />
-                  <span>Download {selectedQuality} ({selectedFormat.toUpperCase()})</span>
+                  <span>Download {selectedQuality || 'Video'} ({selectedFormat ? selectedFormat.toUpperCase() : 'MP4'})</span>
                 </>
               )}
             </Button>
