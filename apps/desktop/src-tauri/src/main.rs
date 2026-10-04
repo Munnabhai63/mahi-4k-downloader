@@ -220,8 +220,12 @@ async fn analyze_local(url: String) -> Result<AnalyzeResult, String> {
     args.push("--skip-download".to_string());
     args.push(url.clone());
 
-    let output = Command::new(&cmd_bin)
-        .args(&args)
+    let mut cmd = Command::new(&cmd_bin);
+    cmd.args(&args);
+    #[cfg(target_os = "windows")]
+    cmd.creation_flags(0x08000000);
+
+    let output = cmd
         .output()
         .map_err(|_| "Unable to launch local media engine.".to_string())?;
 
@@ -421,11 +425,14 @@ fn download_local(app: tauri::AppHandle, spec: DownloadSpec) -> Result<String, S
         args.push(outtmpl);
         args.push(url);
 
-        let mut child = match Command::new(&cmd_bin)
-            .args(&args)
+        let mut cmd = Command::new(&cmd_bin);
+        cmd.args(&args)
             .stdout(Stdio::piped())
-            .stderr(Stdio::piped())
-            .spawn()
+            .stderr(Stdio::piped());
+        #[cfg(target_os = "windows")]
+        cmd.creation_flags(0x08000000);
+
+        let mut child = match cmd.spawn()
         {
             Ok(c) => c,
             Err(e) => {
