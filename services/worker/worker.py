@@ -354,7 +354,13 @@ def analyze_url(url: str, cookie_file: Optional[str] = None) -> Dict[str, Any]:
 
     if HAVE_IMPERSONATE:
         try:
-            ydl_opts["impersonate"] = ImpersonateTarget.from_str("chrome")
+            # Dailymotion requires browser impersonation to avoid bot detection
+            # Reddit also requires it
+            # YouTube uses player_client/EJS pipeline instead
+            if platform in ("dailymotion", "generic"):
+                ydl_opts["impersonate"] = ImpersonateTarget.from_str("chrome")
+            elif platform == "reddit":
+                ydl_opts["impersonate"] = ImpersonateTarget.from_str("firefox")
         except Exception:
             pass
 

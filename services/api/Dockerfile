@@ -17,7 +17,9 @@ ENV NODE_ENV=production
 ENV PYTHON_PATH=python3
 
 RUN apk add --no-cache python3 py3-pip ffmpeg aria2 curl \
-    && pip install --no-cache-dir --break-system-packages yt-dlp yt-dlp-ejs requests redis pydantic
+        python3-dev libffi-dev gcc musl-dev \
+    && pip install --no-cache-dir --break-system-packages \
+        yt-dlp yt-dlp-ejs requests redis pydantic 'curl_cffi>=0.7.0'
 
 COPY --from=builder /app ./
 
