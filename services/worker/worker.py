@@ -25,6 +25,7 @@ except ImportError:
     YTDLP_VERSION = None
 
 try:
+    import curl_cffi
     from yt_dlp.networking.impersonate import ImpersonateTarget
     HAVE_IMPERSONATE = True
 except Exception:
