@@ -10,6 +10,7 @@ import {
   ChevronDown,
   X,
   Loader2,
+  CheckCircle2,
 } from 'lucide-react';
 import { Card } from '@turbograb/ui';
 import { PasteBar } from '@/components/PasteBar';
@@ -17,6 +18,7 @@ import { PlatformRow } from '@/components/PlatformRow';
 import { VideoPreviewCard } from '@/components/VideoPreviewCard';
 import { ActiveDownloads } from '@/components/ActiveDownloads';
 import { DesktopHandoffCard } from '@/components/DesktopHandoffCard';
+import { MediaPickerGrid } from '@/components/MediaPickerGrid';
 import {
   AnalyzeResult,
   DownloadItem,
@@ -25,7 +27,8 @@ import {
 } from '@turbograb/types';
 import { executeApiRequest } from '@/lib/api';
 import { sanitizeUserError } from '@/lib/errorSanitizer';
-import { isUnsupportedWebProvider, isYouTubeUrl, detectPlatformRoute } from '@/lib/routing';
+import { isYouTubeUrl, detectPlatformRoute } from '@/lib/routing';
+import { resolveMedia, triggerBrowserDownload, CobaltPickerResponse } from '@/lib/m4k-api';
 import { Sparkles } from 'lucide-react';
 
 export default function HomePage() {
@@ -35,6 +38,8 @@ export default function HomePage() {
   const [batchResults, setBatchResults] = useState<AnalyzeResult[]>([]);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [youtubeHandoffUrl, setYoutubeHandoffUrl] = useState<string | null>(null);
+  const [cobaltPicker, setCobaltPicker] = useState<CobaltPickerResponse | null>(null);
+  const [downloadSuccess, setDownloadSuccess] = useState<{ filename: string; url: string } | null>(null);
   const [activeDownloads, setActiveDownloads] = useState<DownloadItem[]>([]);
   const [isStartingDownload, setIsStartingDownload] = useState<boolean>(false);
 
@@ -51,10 +56,12 @@ export default function HomePage() {
     setErrorMessage(null);
     setAnalyzeResult(null);
     setBatchResults([]);
+    setCobaltPicker(null);
+    setDownloadSuccess(null);
     // Immediately evict any stale failed or cancelled jobs from the view
     setActiveDownloads((prev) => prev.filter((it) => it.status !== 'FAILED' && it.status !== 'CANCELLED'));
 
-    // 1. YouTube handoff to local engine
+    // 1. YouTube handoff to local engine (UNCHANGED)
     if (isYouTubeUrl(trimmedUrl)) {
       setYoutubeHandoffUrl(trimmedUrl);
       setIsAnalyzing(false);
@@ -63,32 +70,29 @@ export default function HomePage() {
 
     setYoutubeHandoffUrl(null);
 
-    // 2. Fail immediately before network call or queue creation for unsupported providers
-    if (isUnsupportedWebProvider(trimmedUrl)) {
-      setErrorMessage('This source currently does not support direct web download.');
-      setIsAnalyzing(false);
-      return;
-    }
-
+    // 2. Online flow via m4k-api (Cobalt backend on VPS)
     setIsAnalyzing(true);
 
     try {
-      const res = await executeApiRequest('/analyze', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url: trimmedUrl }),
-      });
+      const data = await resolveMedia(trimmedUrl, false);
 
-      const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.message || 'This source currently does not support direct web download.');
+      if (data.status === 'redirect' || data.status === 'tunnel') {
+        triggerBrowserDownload(data.url, data.filename);
+        setDownloadSuccess({
+          filename: data.filename || 'media',
+          url: data.url,
+        });
+      } else if (data.status === 'picker') {
+        setCobaltPicker(data);
+      } else if (data.status === 'error') {
+        const errCode = data.error?.code || 'error.api.unknown';
+        setErrorMessage(`Download error: ${errCode}`);
+      } else {
+        throw new Error('Unexpected response from download service.');
       }
-
-      setAnalyzeResult(data);
     } catch (err: any) {
       setErrorMessage(
-        sanitizeUserError(err.message || 'This source currently does not support direct web download.'),
+        sanitizeUserError(err.message || 'This media is currently unavailable for direct download.')
       );
     } finally {
       setIsAnalyzing(false);
@@ -363,6 +367,49 @@ export default function HomePage() {
             onDismiss={() => setYoutubeHandoffUrl(null)}
             autoLaunch={true}
           />
+        )}
+
+        {/* Online Download Success Feedback */}
+        {downloadSuccess && (
+          <div className="w-full max-w-xl mx-auto my-4 p-4 rounded-2xl bg-[#F0FDF4] border border-[#BBF7D0] text-xs text-[#166534] flex items-center justify-between gap-3 animate-in fade-in duration-200 shadow-xs">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <CheckCircle2 className="w-4 h-4 text-[#16A34A] shrink-0" />
+              <span className="font-semibold truncate">
+                Download started: {downloadSuccess.filename}
+              </span>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <a
+                href={downloadSuccess.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                download={downloadSuccess.filename}
+                className="font-bold text-[#16A34A] hover:text-[#15803D] hover:underline"
+              >
+                Click if download didn&apos;t start
+              </a>
+              <button
+                type="button"
+                onClick={() => setDownloadSuccess(null)}
+                className="text-slate-400 hover:text-slate-600 p-1 rounded transition-colors"
+                title="Dismiss"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Cobalt Carousel / Picker Items Grid */}
+        {cobaltPicker && (
+          <div className="w-full max-w-4xl mx-auto my-4 text-left">
+            <MediaPickerGrid
+              items={cobaltPicker.picker}
+              audioUrl={cobaltPicker.audio}
+              audioFilename={cobaltPicker.audioFilename}
+              onClose={() => setCobaltPicker(null)}
+            />
+          </div>
         )}
 
         {/* Neutral inline error — small, no drama */}

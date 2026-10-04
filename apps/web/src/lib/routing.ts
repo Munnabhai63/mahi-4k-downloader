@@ -27,13 +27,9 @@ export function isYouTubeUrl(rawUrl: string): boolean {
   return lower.includes('youtube.com') || lower.includes('youtu.be');
 }
 
-export function isUnsupportedWebProvider(rawUrl: string): boolean {
-  const lower = (rawUrl || '').toLowerCase();
-  // YouTube is handled via dedicated local Desktop Engine handoff, NOT as a web unsupported error
-  return (
-    lower.includes('instagram.com') ||
-    lower.includes('tiktok.com')
-  );
+export function isUnsupportedWebProvider(_rawUrl: string): boolean {
+  // All non-YouTube providers are processed online via the VPS Cobalt backend
+  return false;
 }
 
 export function detectPlatformRoute(rawUrl: string): PlatformRouteInfo {
@@ -54,27 +50,27 @@ export function detectPlatformRoute(rawUrl: string): PlatformRouteInfo {
     };
   }
 
-  // 2. Instagram (Web Unsupported due to login wall restrictions)
+  // 2. Instagram (Online Web Download)
   if (lower.includes('instagram.com')) {
     return {
       platform: 'instagram',
-      engine: 'DESKTOP_PREFERRED',
+      engine: 'WEB_RELIABLE',
       displayName: 'Instagram',
       recommendedResolution: 'Original HD Reel & Audio',
-      guideMessage: 'This source currently does not support direct web download.',
+      guideMessage: 'Instagram media processed directly via Online Engine.',
       deepLink,
       downloadAppUrl: DESKTOP_APP_DOWNLOAD_URL,
     };
   }
 
-  // 3. TikTok (Web Unsupported due to bot verification restrictions)
+  // 3. TikTok (Online Web Download)
   if (lower.includes('tiktok.com')) {
     return {
       platform: 'tiktok',
-      engine: 'DESKTOP_PREFERRED',
+      engine: 'WEB_RELIABLE',
       displayName: 'TikTok',
       recommendedResolution: 'Original HD & MP3',
-      guideMessage: 'This source currently does not support direct web download.',
+      guideMessage: 'TikTok media processed directly via Online Engine.',
       deepLink,
       downloadAppUrl: DESKTOP_APP_DOWNLOAD_URL,
     };

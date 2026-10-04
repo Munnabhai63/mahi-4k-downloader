@@ -159,13 +159,13 @@ export const PlatformRow: React.FC<PlatformRowProps> = ({ onSelectPlatform }) =>
     {
       id: 'instagram',
       name: 'Instagram',
-      badge: 'Web Unsupported',
-      badgeType: 'unsupported',
-      sampleUrl: 'https://www.instagram.com/reel/C8t1M2UvQ6-/',
-      glowShadow: '0 12px 28px -4px rgba(225, 48, 108, 0.3), 0 0 20px rgba(225, 48, 108, 0.2)',
-      activeBorder: 'hover:border-pink-400/50',
+      badge: 'Fast Web',
+      badgeType: 'fast-web',
+      sampleUrl: 'https://www.instagram.com/reel/DdRtRBZApzr/',
+      glowShadow: '0 12px 28px -4px rgba(225, 48, 108, 0.4), 0 0 20px rgba(225, 48, 108, 0.3)',
+      activeBorder: 'hover:border-pink-500/60',
       icon: (
-        <svg viewBox="0 0 64 64" className="w-10 h-10 transition-transform duration-300 group-hover:scale-110 opacity-75 group-hover:opacity-100" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <svg viewBox="0 0 64 64" className="w-10 h-10 transition-transform duration-300 group-hover:scale-110" fill="none" xmlns="http://www.w3.org/2000/svg">
           <rect x="8" y="8" width="48" height="48" rx="14" fill="#E1306C" />
           <rect x="18" y="18" width="28" height="28" rx="8" stroke="#FFFFFF" strokeWidth="3" />
           <circle cx="32" cy="32" r="7" stroke="#FFFFFF" strokeWidth="3" />
@@ -176,11 +176,11 @@ export const PlatformRow: React.FC<PlatformRowProps> = ({ onSelectPlatform }) =>
     {
       id: 'tiktok',
       name: 'TikTok',
-      badge: 'Web Unsupported',
-      badgeType: 'unsupported',
+      badge: 'Fast Web',
+      badgeType: 'fast-web',
       sampleUrl: 'https://www.tiktok.com/@tiktok/video/7106594312292453678',
-      glowShadow: '0 12px 28px -4px rgba(0, 0, 0, 0.3), 0 0 20px rgba(0, 0, 0, 0.2)',
-      activeBorder: 'hover:border-slate-500/50',
+      glowShadow: '0 12px 28px -4px rgba(0, 0, 0, 0.4), 0 0 20px rgba(0, 0, 0, 0.3)',
+      activeBorder: 'hover:border-slate-700/60',
       icon: (
         <svg viewBox="0 0 64 64" className="w-10 h-10 transition-transform duration-300 group-hover:scale-110 opacity-75 group-hover:opacity-100" fill="none" xmlns="http://www.w3.org/2000/svg">
           <rect x="8" y="8" width="48" height="48" rx="14" fill="#0F172A" />
