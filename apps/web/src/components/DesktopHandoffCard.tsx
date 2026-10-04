@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { Download, ExternalLink, X, CheckCircle2 } from 'lucide-react';
 import { Card, Button } from '@turbograb/ui';
-import { PlatformRouteInfo, DESKTOP_APP_DOWNLOAD_URL, LOCAL_INSTALLER_PATH } from '@/lib/routing';
+import { PlatformRouteInfo, DESKTOP_APP_DOWNLOAD_URL } from '@/lib/routing';
 
 interface DesktopHandoffCardProps {
   route: PlatformRouteInfo;
