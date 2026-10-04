@@ -26,8 +26,8 @@ import {
   VideoFormat,
 } from '@turbograb/types';
 import { executeApiRequest } from '@/lib/api';
-import { sanitizeUserError } from '@/lib/errorSanitizer';
-import { isYouTubeUrl, detectPlatformRoute } from '@/lib/routing';
+import { sanitizeUserError, mapCobaltError } from '@/lib/errorSanitizer';
+import { isYouTubeUrl, detectPlatformRoute, normalizeInputUrl } from '@/lib/routing';
 import { resolveMedia, triggerBrowserDownload, CobaltPickerResponse } from '@/lib/m4k-api';
 import { Sparkles } from 'lucide-react';
 
@@ -50,8 +50,8 @@ export default function HomePage() {
   });
 
   const handleAnalyze = async (url: string) => {
-    const trimmedUrl = (url || '').trim();
-    if (!trimmedUrl) return;
+    const raw = (url || '').trim();
+    if (!raw) return;
 
     setErrorMessage(null);
     setAnalyzeResult(null);
@@ -61,9 +61,20 @@ export default function HomePage() {
     // Immediately evict any stale failed or cancelled jobs from the view
     setActiveDownloads((prev) => prev.filter((it) => it.status !== 'FAILED' && it.status !== 'CANCELLED'));
 
-    // 1. YouTube handoff to local engine (UNCHANGED)
-    if (isYouTubeUrl(trimmedUrl)) {
-      setYoutubeHandoffUrl(trimmedUrl);
+    // Input normalization & validation
+    const normalized = normalizeInputUrl(raw);
+    if (!normalized.isValidUrl) {
+      setYoutubeHandoffUrl(null);
+      setIsAnalyzing(false);
+      setErrorMessage('Please paste a valid video or media link.');
+      return;
+    }
+
+    const targetUrl = normalized.url;
+
+    // 1. YouTube handoff to local desktop engine (byte-for-byte UNCHANGED)
+    if (isYouTubeUrl(targetUrl)) {
+      setYoutubeHandoffUrl(targetUrl);
       setIsAnalyzing(false);
       return;
     }
@@ -74,7 +85,7 @@ export default function HomePage() {
     setIsAnalyzing(true);
 
     try {
-      const data = await resolveMedia(trimmedUrl, false);
+      const data = await resolveMedia(targetUrl, false);
 
       if (data.status === 'redirect' || data.status === 'tunnel') {
         triggerBrowserDownload(data.url, data.filename);
@@ -85,14 +96,14 @@ export default function HomePage() {
       } else if (data.status === 'picker') {
         setCobaltPicker(data);
       } else if (data.status === 'error') {
-        const errCode = data.error?.code || 'error.api.unknown';
-        setErrorMessage(`Download error: ${errCode}`);
+        const errCode = data.error?.code;
+        setErrorMessage(mapCobaltError(errCode));
       } else {
-        throw new Error('Unexpected response from download service.');
+        setErrorMessage('Unexpected response from download service. Please try again.');
       }
     } catch (err: any) {
       setErrorMessage(
-        sanitizeUserError(err.message || 'This media is currently unavailable for direct download.')
+        mapCobaltError(err?.message) || 'Unable to connect to download service. Please try again.'
       );
     } finally {
       setIsAnalyzing(false);

@@ -22,9 +22,54 @@ export interface PlatformRouteInfo {
 export const DESKTOP_APP_DOWNLOAD_URL = 'https://github.com/Munnabhai63/mahi-4k-downloader/releases/download/v1.0.0-beta/My_4K_Downloader_1.0.0_x64_Setup.exe';
 export const LOCAL_INSTALLER_PATH = '/My_4K_Downloader_1.0.0_x64_Setup.exe';
 
+export function normalizeInputUrl(rawInput: string): { url: string; isValidUrl: boolean } {
+  const trimmed = (rawInput || '').trim();
+  if (!trimmed) {
+    return { url: '', isValidUrl: false };
+  }
+
+  // Reject text without recognizable domain or containing obvious non-URL spaces
+  if (trimmed.includes(' ') && !trimmed.startsWith('http://') && !trimmed.startsWith('https://')) {
+    return { url: trimmed, isValidUrl: false };
+  }
+
+  let candidate = trimmed;
+  // If no scheme present, prepend https://
+  if (!/^https?:\/\//i.test(candidate)) {
+    // Check if it looks like a domain name with at least one dot (e.g. instagram.com/reel/...)
+    if (/^[a-zA-Z0-9-]+(\.[a-zA-Z0-9-]+)+/i.test(candidate)) {
+      candidate = `https://${candidate}`;
+    } else {
+      return { url: trimmed, isValidUrl: false };
+    }
+  }
+
+  try {
+    const parsed = new URL(candidate);
+    if ((parsed.protocol === 'http:' || parsed.protocol === 'https:') && parsed.hostname.includes('.')) {
+      return { url: candidate, isValidUrl: true };
+    }
+    return { url: candidate, isValidUrl: false };
+  } catch {
+    return { url: candidate, isValidUrl: false };
+  }
+}
+
 export function isYouTubeUrl(rawUrl: string): boolean {
-  const lower = (rawUrl || '').toLowerCase();
-  return lower.includes('youtube.com') || lower.includes('youtu.be');
+  if (!rawUrl) return false;
+  const lower = rawUrl.toLowerCase().trim();
+  return (
+    lower.includes('youtube.com/watch') ||
+    lower.includes('youtu.be/') ||
+    lower.includes('youtube.com/shorts/') ||
+    lower.includes('youtube.com/embed/') ||
+    lower.includes('m.youtube.com/') ||
+    lower.includes('music.youtube.com/') ||
+    lower.includes('youtube.com/v/') ||
+    lower.includes('youtube.com/live/') ||
+    lower.includes('youtube.com') ||
+    lower.includes('youtu.be')
+  );
 }
 
 export function isUnsupportedWebProvider(_rawUrl: string): boolean {

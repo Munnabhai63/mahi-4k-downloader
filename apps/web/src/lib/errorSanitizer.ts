@@ -8,21 +8,32 @@
  * - Concise, compact, neutral status copy
  */
 
+export function mapCobaltError(rawCode?: string | null): string {
+  if (!rawCode || typeof rawCode !== 'string') {
+    return 'Unable to download this link. Please check the URL and try again.';
+  }
+  const code = rawCode.toLowerCase();
+  if (code.includes('rate_exceeded')) {
+    return 'Download rate limit reached. Please wait a moment and try again.';
+  }
+  if (code.includes('fetch.empty')) {
+    return 'Media not found. The post may be private, removed, or login-restricted.';
+  }
+  if (code.includes('invalid_body') || code.includes('invalid_url') || code.includes('invalid link')) {
+    return 'Invalid media link. Please check the link and try again.';
+  }
+  if (code.includes('unsupported')) {
+    return 'This link is currently unsupported by the download service.';
+  }
+  return `Download failed (${rawCode}). Please verify the link.`;
+}
+
 export function sanitizeUserError(rawMsg: string | undefined | null): string {
   if (!rawMsg || typeof rawMsg !== 'string') {
     return 'Unable to download this link right now.';
   }
 
   const lower = rawMsg.toLowerCase();
-
-  // Neutral direct web download restriction from API
-  if (
-    lower.includes('unavailable for direct web download') ||
-    lower.includes('currently unavailable for direct') ||
-    lower.includes('does not support direct web download')
-  ) {
-    return 'This source currently does not support direct web download.';
-  }
 
   // Platform bot/verification checks or provider restriction
   if (
@@ -31,12 +42,9 @@ export function sanitizeUserError(rawMsg: string | undefined | null): string {
     lower.includes('login_required') ||
     lower.includes('cookies') ||
     lower.includes('confirm you') ||
-    lower.includes('bot verification') ||
-    lower.includes('direct download right now') ||
-    lower.includes('temporarily unavailable') ||
-    lower.includes('provider temporarily requires')
+    lower.includes('bot verification')
   ) {
-    return 'This source currently does not support direct web download.';
+    return 'This video requires login or bot verification on the source site.';
   }
 
   // Private or restricted content
