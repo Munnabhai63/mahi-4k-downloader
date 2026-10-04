@@ -6,22 +6,12 @@
 export const PRODUCTION_DEFAULT_BACKEND = 'https://api4k.mahiskills.in';
 
 /**
- * Returns the fully qualified API base URL (e.g. https://.../api/v1 or http://localhost:4000/api/v1)
+ * Returns the fully qualified API base URL (e.g. https://api4k.mahiskills.in/api/v1)
  */
 export function getApiBaseUrl(): string {
   // If an explicit environment variable is set, prioritize it
   if (process.env.NEXT_PUBLIC_API_URL && process.env.NEXT_PUBLIC_API_URL.trim() !== '') {
     return process.env.NEXT_PUBLIC_API_URL.replace(/\/+$/, '');
-  }
-
-  // In the browser, check hostname
-  if (typeof window !== 'undefined') {
-    const host = window.location.hostname;
-    if (host === 'localhost' || host === '127.0.0.1') {
-      return 'http://localhost:4000/api/v1';
-    }
-    // Production Cloudflare Pages, custom domain, or preview
-    return `${PRODUCTION_DEFAULT_BACKEND}/api/v1`;
   }
 
   return `${PRODUCTION_DEFAULT_BACKEND}/api/v1`;
@@ -43,20 +33,7 @@ export async function executeApiRequest(endpoint: string, options: RequestInit):
  */
 export function getSocketConfig(): { origin: string; path: string } {
   const socketEnv = process.env.NEXT_PUBLIC_SOCKET_URL;
-  let rawUrl = socketEnv && socketEnv.trim() !== '' ? socketEnv : '';
-
-  if (!rawUrl) {
-    if (typeof window !== 'undefined') {
-      const host = window.location.hostname;
-      if (host === 'localhost' || host === '127.0.0.1') {
-        rawUrl = 'http://localhost:4000';
-      } else {
-        rawUrl = PRODUCTION_DEFAULT_BACKEND;
-      }
-    } else {
-      rawUrl = PRODUCTION_DEFAULT_BACKEND;
-    }
-  }
+  const rawUrl = socketEnv && socketEnv.trim() !== '' ? socketEnv : PRODUCTION_DEFAULT_BACKEND;
 
   let origin = rawUrl;
   let path = process.env.NEXT_PUBLIC_SOCKET_PATH || '/socket.io';
@@ -84,13 +61,5 @@ export function resolveDownloadUrl(signedUrl: string | undefined | null): string
   }
 
   const cleanPath = signedUrl.startsWith('/') ? signedUrl : `/${signedUrl}`;
-
-  if (typeof window !== 'undefined') {
-    const host = window.location.hostname;
-    if (host === 'localhost' || host === '127.0.0.1') {
-      return `http://localhost:4000${cleanPath}`;
-    }
-  }
-
   return `${PRODUCTION_DEFAULT_BACKEND}${cleanPath}`;
 }
