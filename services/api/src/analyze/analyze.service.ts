@@ -179,10 +179,10 @@ export class AnalyzeService {
           console.error(`[Worker Extraction Error] URL: ${cleanUrl}`, rawErr);
 
           const lowerErr = rawErr.toLowerCase();
-          let userSafeMsg = 'Unable to download this link right now.';
+          let userSafeMsg = 'This media is currently unavailable for direct web download.';
 
           if (lowerErr.includes('not a bot') || lowerErr.includes('sign in to confirm')) {
-            userSafeMsg = 'Unable to download this link right now.';
+            userSafeMsg = 'This media is currently unavailable for direct web download.';
           } else if (lowerErr.includes('private video') || lowerErr.includes('this video is private') || lowerErr.includes('only works when logged-in')) {
             userSafeMsg = 'This video is private or restricted by its author.';
           } else if (lowerErr.includes('video unavailable') || lowerErr.includes('does not exist') || lowerErr.includes('not found') || lowerErr.includes('404')) {
@@ -198,7 +198,7 @@ export class AnalyzeService {
           } else if (lowerErr.includes('timeout') || lowerErr.includes('timed out') || lowerErr.includes('connection reset') || lowerErr.includes('network')) {
             userSafeMsg = 'Analysis timed out. Please check your connection and try again.';
           } else {
-            userSafeMsg = 'Unable to process this video link right now. Please try again.';
+            userSafeMsg = 'This media is currently unavailable for direct web download.';
           }
 
           return reject(new BadRequestException(userSafeMsg));

@@ -49,6 +49,8 @@ export default function HomePage() {
     setErrorMessage(null);
     setAnalyzeResult(null);
     setBatchResults([]);
+    // Immediately evict any stale failed or cancelled jobs from the view
+    setActiveDownloads((prev) => prev.filter((it) => it.status !== 'FAILED' && it.status !== 'CANCELLED'));
     setLastAttemptedUrl(trimmedUrl);
     setIsAnalyzing(true);
 
@@ -62,13 +64,13 @@ export default function HomePage() {
       const data = await res.json();
 
       if (!res.ok) {
-        throw new Error(data.message || 'Unable to download this link right now.');
+        throw new Error(data.message || 'This media is currently unavailable for direct web download.');
       }
 
       setAnalyzeResult(data);
     } catch (err: any) {
       setErrorMessage(
-        sanitizeUserError(err.message || 'This media is currently unavailable for direct download.'),
+        sanitizeUserError(err.message || 'This media is currently unavailable for direct web download.'),
       );
     } finally {
       setIsAnalyzing(false);
@@ -461,6 +463,7 @@ export default function HomePage() {
           downloads={activeDownloads}
           onCancel={handleCancelDownload}
           onRetry={handleRetryDownload}
+          onDismiss={(id) => setActiveDownloads((prev) => prev.filter((it) => it.id !== id))}
         />
 
         {/* Platform Row */}

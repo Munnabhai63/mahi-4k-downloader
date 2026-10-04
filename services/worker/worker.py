@@ -46,6 +46,8 @@ def extract_clean_url(raw_url: str) -> str:
     m = re.search(r'https?://[^\s"\'<>]+', raw_url)
     return m.group(0) if m else raw_url.strip()
 
+WORKER_RELEASE_SHA = os.getenv("RELEASE_SHA", "af818ac")
+
 def check_environment() -> Dict[str, Any]:
     """Inspect worker dependencies, CLI tools, and runtime capability."""
     ffmpeg_path = shutil.which("ffmpeg")
@@ -54,6 +56,7 @@ def check_environment() -> Dict[str, Any]:
     return {
         "status": "ok" if YTDLP_AVAILABLE else "degraded",
         "service": "turbograb-worker",
+        "release_sha": WORKER_RELEASE_SHA,
         "python_version": sys.version.split()[0],
         "ytdlp_available": YTDLP_AVAILABLE,
         "ytdlp_version": YTDLP_VERSION,
@@ -815,7 +818,7 @@ def main():
 
     if args.daemon:
         diag = get_runtime_diagnostics()
-        print(f"[TurboGrab Worker] Daemon running. Python {sys.version.split()[0]}, yt-dlp {diag['ytdlp_version']}, JS runtime: {diag['js_runtime']['name']} ({diag['js_runtime']['version']}), EJS: {diag['ejs_component']['source']} {diag['ejs_component']['version']}.")
+        print(f"[TurboGrab Worker] Daemon running. Release: {WORKER_RELEASE_SHA}, Python {sys.version.split()[0]}, yt-dlp {diag['ytdlp_version']}, JS runtime: {diag['js_runtime']['name']} ({diag['js_runtime']['version']}), EJS: {diag['ejs_component']['source']} {diag['ejs_component']['version']}.")
         try:
             while True:
                 time.sleep(30)

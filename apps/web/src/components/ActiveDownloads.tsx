@@ -12,6 +12,7 @@ import {
   Clock,
   HardDrive,
   Check,
+  X,
 } from 'lucide-react';
 import { Card, Badge, ProgressBar, Button } from '@turbograb/ui';
 import { DownloadItem, ProgressEventPayload } from '@turbograb/types';
@@ -24,6 +25,7 @@ interface ActiveDownloadsProps {
   downloads: DownloadItem[];
   onCancel?: (id: string) => void;
   onRetry?: (id: string) => void;
+  onDismiss?: (id: string) => void;
   onRefresh?: () => void;
 }
 
@@ -31,6 +33,7 @@ export const ActiveDownloads: React.FC<ActiveDownloadsProps> = ({
   downloads: initialDownloads,
   onCancel,
   onRetry,
+  onDismiss,
 }) => {
   const [items, setItems] = useState<DownloadItem[]>(initialDownloads);
   const [activeTab, setActiveTab] = useState<'all' | 'active' | 'completed'>('all');
@@ -278,6 +281,17 @@ export const ActiveDownloads: React.FC<ActiveDownloadsProps> = ({
                       <RefreshCw className="w-3.5 h-3.5" />
                       <span>Retry</span>
                     </Button>
+                  )}
+
+                  {(isFailed || isCancelled || isCompleted) && onDismiss && (
+                    <button
+                      type="button"
+                      onClick={() => onDismiss(item.id)}
+                      className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
+                      title="Dismiss"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
                   )}
                 </div>
               </div>

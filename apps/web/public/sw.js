@@ -1,5 +1,5 @@
-// TurboGrab PWA Service Worker - v2 (Network First Strategy)
-const CACHE_NAME = 'turbograb-cache-v2';
+// TurboGrab PWA Service Worker - v3 (Network First with Cache Buster)
+const CACHE_NAME = 'turbograb-cache-v3-af818ac';
 
 self.addEventListener('install', (event) => {
   self.skipWaiting();
@@ -11,6 +11,7 @@ self.addEventListener('activate', (event) => {
       return Promise.all(
         keys.map((key) => {
           if (key !== CACHE_NAME) {
+            console.log('[ServiceWorker] Purging obsolete cache:', key);
             return caches.delete(key);
           }
         })

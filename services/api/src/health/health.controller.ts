@@ -16,6 +16,7 @@ export class HealthController {
       uptimeSec: Math.floor((Date.now() - this.startTime) / 1000),
       timestamp: new Date().toISOString(),
       version: '1.0.0',
+      releaseSha: process.env.RELEASE_SHA || 'af818ac',
     };
   }
 }

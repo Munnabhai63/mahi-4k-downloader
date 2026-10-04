@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
+import { APP_RELEASE_SHA, APP_BUILD_TIMESTAMP } from '@/lib/version';
 
 const siteUrl = 'https://mahi-4k-downloader.pages.dev';
 
@@ -142,6 +143,8 @@ export default function RootLayout({
           name="google-site-verification"
           content="EceHA3fkX__gFhBGdB3Qdplj1s5XfMcqYTupTXqOpEg"
         />
+        <meta name="app-release-sha" content={APP_RELEASE_SHA} />
+        <meta name="app-build-timestamp" content={APP_BUILD_TIMESTAMP} />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdWebSite) }}
@@ -170,7 +173,9 @@ export default function RootLayout({
                   }
                 } else {
                   window.addEventListener('load', function() {
-                    navigator.serviceWorker.register('/sw.js').catch(function() {});
+                    navigator.serviceWorker.register('/sw.js?v=${APP_RELEASE_SHA}').then(function(reg) {
+                      reg.update();
+                    }).catch(function() {});
                   });
                 }
               }
