@@ -128,7 +128,7 @@ export const PlatformRow: React.FC<PlatformRowProps> = ({ onSelectPlatform }) =>
     },
     {
       id: 'x',
-      name: 'X (Twitter)',
+      name: 'X/Twitter',
       badge: 'API / Limited',
       badgeType: 'limited',
       sampleUrl: 'https://x.com/Twitter/status/1274062719266185217',
