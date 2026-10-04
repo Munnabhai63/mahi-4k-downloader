@@ -22,6 +22,7 @@ interface QualityOption {
   available: boolean;
   formatNote: string;
   fps: number;
+  estimatedBytes?: number | null;
 }
 
 interface AnalyzeResult {
@@ -44,6 +45,8 @@ export default function App() {
   const [selectedFormat, setSelectedFormat] = useState<string>('mp4');
   const [downloading, setDownloading] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [downloadSpeed, setDownloadSpeed] = useState<string>('');
+  const [downloadEta, setDownloadEta] = useState<string>('');
   const [lastDownloadedFile, setLastDownloadedFile] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [clipboardWatcher, setClipboardWatcher] = useState(true);
@@ -69,12 +72,18 @@ export default function App() {
         if (payload.status === 'DOWNLOADING') {
           setDownloading(true);
           setProgress(Math.round(payload.progress || 0));
+          if (payload.speedStr) setDownloadSpeed(payload.speedStr);
+          if (payload.etaStr) setDownloadEta(payload.etaStr);
         } else if (payload.status === 'COMPLETED') {
           setDownloading(false);
           setProgress(100);
+          setDownloadSpeed('');
+          setDownloadEta('');
           setLastDownloadedFile(payload.filename || 'Downloaded media file');
         } else if (payload.status === 'FAILED') {
           setDownloading(false);
+          setDownloadSpeed('');
+          setDownloadEta('');
           setErrorMessage(payload.error_msg || 'Download failed on local engine.');
         }
       }).then((unsub: any) => {
@@ -141,8 +150,9 @@ export default function App() {
       try {
         const res = await invoke<AnalyzeResult>('analyze_local', { url: toAnalyze });
         setMetadata(res);
-        // Default to highest available video quality or first available option
-        const best = res.qualities.find(q => q.available && q.height <= 2160 && q.height > 0)?.label
+        // Default to 1080p Full HD if available, otherwise best <= 1080p, or first available
+        const best = res.qualities.find(q => q.available && q.height === 1080)?.label
+          || res.qualities.find(q => q.available && q.height <= 1080 && q.height > 0)?.label
           || res.qualities.find(q => q.available)?.label
           || 'Original';
         setSelectedQuality(best);
@@ -177,6 +187,8 @@ export default function App() {
 
     setDownloading(true);
     setProgress(1);
+    setDownloadSpeed('');
+    setDownloadEta('');
     setErrorMessage(null);
     setLastDownloadedFile(null);
 
@@ -332,25 +344,51 @@ export default function App() {
 
                 {/* Quality Selector */}
                 <div>
-                  <label className="block text-[11px] font-semibold text-slate-700 mb-1.5">
-                    Select Quality:
-                  </label>
-                  <div className="flex flex-wrap gap-1.5">
-                    {metadata.qualities.filter(q => q.available).map((q) => (
-                      <button
-                        key={q.label}
-                        type="button"
-                        onClick={() => setSelectedQuality(q.label)}
-                        className={`px-3 py-1 rounded-lg text-xs font-semibold border transition-all ${
-                          selectedQuality === q.label
-                            ? 'bg-[#16A34A] text-white border-[#16A34A] shadow-xs'
-                            : 'bg-white text-slate-700 border-slate-200 hover:border-slate-300'
-                        }`}
-                      >
-                        {q.label} {q.height >= 2160 ? '⚡ Ultra HD' : ''}
-                      </button>
-                    ))}
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="block text-[11px] font-semibold text-slate-700">
+                      Select Quality:
+                    </label>
+                    <span className="text-[10px] text-emerald-700 font-medium">
+                      Default: 1080p Full HD (Fast & Crisp)
+                    </span>
                   </div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {metadata.qualities.filter(q => q.available).map((q) => {
+                      const sizeMb = q.estimatedBytes ? Math.round(q.estimatedBytes / (1024 * 1024)) : null;
+                      return (
+                        <button
+                          key={q.label}
+                          type="button"
+                          onClick={() => setSelectedQuality(q.label)}
+                          className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all flex items-center gap-1.5 ${
+                            selectedQuality === q.label
+                              ? 'bg-[#16A34A] text-white border-[#16A34A] shadow-xs'
+                              : 'bg-white text-slate-700 border-slate-200 hover:border-slate-300'
+                          }`}
+                        >
+                          <span>{q.label}</span>
+                          {sizeMb !== null && (
+                            <span className={`text-[10px] font-normal ${selectedQuality === q.label ? 'text-emerald-100' : 'text-slate-500'}`}>
+                              (~{sizeMb >= 1024 ? `${(sizeMb / 1024).toFixed(1)} GB` : `${sizeMb} MB`})
+                            </span>
+                          )}
+                          {q.height >= 2160 && (
+                            <span className={`text-[9px] px-1 py-0.2 rounded font-bold uppercase ${selectedQuality === q.label ? 'bg-emerald-800 text-white' : 'bg-amber-100 text-amber-800'}`}>
+                              4K
+                            </span>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  {(selectedQuality === '4K' || selectedQuality === '8K') && (
+                    <div className="mt-2 px-3 py-2 bg-amber-50 border border-amber-200 text-[11px] text-amber-800 rounded-xl flex items-center gap-1.5">
+                      <AlertCircle className="w-3.5 h-3.5 shrink-0 text-amber-600" />
+                      <span>
+                        <strong>{selectedQuality} Ultra HD selected:</strong> Highest fidelity, larger file size (~200MB+). For instant downloads, 1080p is recommended.
+                      </span>
+                    </div>
+                  )}
                 </div>
 
                 {/* Format Selector */}
@@ -407,8 +445,8 @@ export default function App() {
                 <ProgressBar
                   progress={progress}
                   showLabel
-                  speedText="Local Network Speed"
-                  etaText="Direct Download"
+                  speedText={downloadSpeed ? `${downloadSpeed}` : "Calculating speed..."}
+                  etaText={downloadEta ? `ETA: ${downloadEta}` : "Direct Download"}
                 />
               </div>
             )}
@@ -441,9 +479,13 @@ export default function App() {
               onClick={handleStartDownload}
             >
               {downloading ? (
-                <span className="flex items-center gap-2">
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  Downloading Locally ({progress}%)...
+                <span className="flex items-center justify-center gap-2 text-xs sm:text-sm">
+                  <Loader2 className="w-4 h-4 animate-spin shrink-0" />
+                  <span>
+                    Downloading ({progress}%)
+                    {downloadSpeed ? ` • ${downloadSpeed}` : ''}
+                    {downloadEta ? ` • ETA ${downloadEta}` : ''}
+                  </span>
                 </span>
               ) : (
                 <>

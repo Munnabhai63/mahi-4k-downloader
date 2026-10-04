@@ -57,6 +57,10 @@ pub struct ProgressPayload {
     pub output_path: Option<String>,
     pub filename: Option<String>,
     pub error_msg: Option<String>,
+    #[serde(rename = "speedStr")]
+    pub speed_str: Option<String>,
+    #[serde(rename = "etaStr")]
+    pub eta_str: Option<String>,
 }
 
 fn get_downloads_dir() -> PathBuf {
@@ -309,11 +313,16 @@ async fn analyze_local(url: String) -> Result<AnalyzeResult, String> {
         for (label, h, note) in qualities_config {
             if h == 0 {
                 if has_audio {
+                    let audio_est = if duration_sec > 0 {
+                        Some((duration_sec as f64 * (320_000.0 / 8.0)) as i64)
+                    } else {
+                        None
+                    };
                     qualities.push(QualityOption {
                         label: label.to_string(),
                         height: 0,
                         available: true,
-                        estimated_bytes: None,
+                        estimated_bytes: audio_est,
                         format_note: note.to_string(),
                         fps: 0,
                     });
@@ -321,11 +330,38 @@ async fn analyze_local(url: String) -> Result<AnalyzeResult, String> {
             } else {
                 let is_avail = available_heights.iter().any(|&avail_h| avail_h >= (h as f32 * 0.95) as i32);
                 if is_avail {
+                    let mut est_bytes: Option<i64> = None;
+                    if let Some(formats) = json_val["formats"].as_array() {
+                        for f in formats {
+                            if let Some(fh) = f["height"].as_i64() {
+                                if fh >= (h as f32 * 0.95) as i64 && fh <= (h as f32 * 1.05) as i64 {
+                                    if let Some(sz) = f["filesize"].as_i64().or_else(|| f["filesize_approx"].as_i64()) {
+                                        est_bytes = Some(sz);
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    if est_bytes.is_none() && duration_sec > 0 {
+                        let mbps: f64 = match h {
+                            4320 => 35.0,
+                            2160 => 14.0,
+                            1440 => 6.0,
+                            1080 => 2.5,
+                            720 => 1.2,
+                            480 => 0.6,
+                            360 => 0.4,
+                            _ => 1.0,
+                        };
+                        est_bytes = Some((duration_sec as f64 * (mbps * 1_000_000.0 / 8.0)) as i64);
+                    }
+
                     qualities.push(QualityOption {
                         label: label.to_string(),
                         height: h,
                         available: true,
-                        estimated_bytes: None,
+                        estimated_bytes: est_bytes,
                         format_note: note.to_string(),
                         fps: if h >= 1080 { 60 } else { 30 },
                     });
@@ -402,6 +438,8 @@ fn download_local(app: tauri::AppHandle, spec: DownloadSpec) -> Result<String, S
         args.push("--newline".to_string());
         args.push("--no-warnings".to_string());
         args.push("--no-part".to_string());
+        args.push("--concurrent-fragments".to_string());
+        args.push("4".to_string());
         args.push("-f".to_string());
         args.push(format_selector);
 
@@ -447,6 +485,8 @@ fn download_local(app: tauri::AppHandle, spec: DownloadSpec) -> Result<String, S
                     output_path: None,
                     filename: None,
                     error_msg: Some(e.to_string()),
+                    speed_str: None,
+                    eta_str: None,
                 });
                 return;
             }
@@ -460,12 +500,20 @@ fn download_local(app: tauri::AppHandle, spec: DownloadSpec) -> Result<String, S
                     if line.starts_with("[download]") && line.contains('%') {
                         let parts: Vec<&str> = line.split_whitespace().collect();
                         let mut pct = 1.0;
-                        for p in &parts {
+                        let mut speed_str: Option<String> = None;
+                        let mut eta_str: Option<String> = None;
+
+                        for (i, p) in parts.iter().enumerate() {
                             if p.ends_with('%') {
                                 if let Ok(val) = p.trim_end_matches('%').parse::<f64>() {
                                     pct = val;
-                                    break;
                                 }
+                            }
+                            if *p == "at" && i + 1 < parts.len() {
+                                speed_str = Some(parts[i + 1].to_string());
+                            }
+                            if *p == "ETA" && i + 1 < parts.len() {
+                                eta_str = Some(parts[i + 1].to_string());
                             }
                         }
 
@@ -480,6 +528,8 @@ fn download_local(app: tauri::AppHandle, spec: DownloadSpec) -> Result<String, S
                             output_path: None,
                             filename: None,
                             error_msg: None,
+                            speed_str,
+                            eta_str,
                         });
                     }
                 }
@@ -499,6 +549,8 @@ fn download_local(app: tauri::AppHandle, spec: DownloadSpec) -> Result<String, S
                     output_path: Some(out_dir.to_string_lossy().to_string()),
                     filename: Some("Video saved to Downloads/My 4K Downloader".to_string()),
                     error_msg: None,
+                    speed_str: None,
+                    eta_str: None,
                 });
             }
             Ok(status) => {
@@ -513,6 +565,8 @@ fn download_local(app: tauri::AppHandle, spec: DownloadSpec) -> Result<String, S
                     output_path: None,
                     filename: None,
                     error_msg: Some(format!("yt-dlp process exited with code {}", status)),
+                    speed_str: None,
+                    eta_str: None,
                 });
             }
             Err(e) => {
@@ -527,6 +581,8 @@ fn download_local(app: tauri::AppHandle, spec: DownloadSpec) -> Result<String, S
                     output_path: None,
                     filename: None,
                     error_msg: Some(e.to_string()),
+                    speed_str: None,
+                    eta_str: None,
                 });
             }
         }
