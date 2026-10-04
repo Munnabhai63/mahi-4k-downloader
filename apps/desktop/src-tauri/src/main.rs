@@ -129,6 +129,25 @@ fn find_ffmpeg_bin() -> Option<String> {
     None
 }
 
+fn sanitize_engine_error(err_str: &str) -> String {
+    let lower = err_str.to_lowercase();
+    if lower.contains("private") || lower.contains("permission") || lower.contains("members only") || lower.contains("restricted by") {
+        "This media is private or restricted.".to_string()
+    } else if lower.contains("unavailable") || lower.contains("does not exist") || lower.contains("not found") || lower.contains("404") || lower.contains("removed") {
+        "This media is unavailable or has been removed.".to_string()
+    } else if lower.contains("drm") || lower.contains("protected") {
+        "DRM-protected media cannot be downloaded.".to_string()
+    } else if lower.contains("sign in") || lower.contains("bot") || lower.contains("cookie") || lower.contains("login") {
+        "This media requires account sign-in and cannot be downloaded.".to_string()
+    } else if lower.contains("unsupported") || lower.contains("no suitable extractor") {
+        "This source is not supported yet.".to_string()
+    } else if lower.contains("timeout") || lower.contains("connection") || lower.contains("network") {
+        "Connection timed out. Please check your internet connection.".to_string()
+    } else {
+        "This media is currently unavailable.".to_string()
+    }
+}
+
 fn detect_platform(url: &str) -> String {
     let l = url.to_lowercase();
     if l.contains("youtube.com") || l.contains("youtu.be") {
@@ -143,8 +162,14 @@ fn detect_platform(url: &str) -> String {
         "twitter".to_string()
     } else if l.contains("vimeo.com") {
         "vimeo".to_string()
-    } else if l.contains("reddit.com") {
+    } else if l.contains("reddit.com") || l.contains("v.redd.it") {
         "reddit".to_string()
+    } else if l.contains("dailymotion.com") || l.contains("dai.ly") {
+        "dailymotion".to_string()
+    } else if l.contains("archive.org") {
+        "archive".to_string()
+    } else if l.ends_with(".mp4") || l.ends_with(".webm") || l.ends_with(".mkv") || l.contains(".m3u8") || l.ends_with(".mov") || l.ends_with(".mp3") {
+        "direct".to_string()
     } else {
         "generic".to_string()
     }
@@ -198,37 +223,50 @@ async fn analyze_local(url: String) -> Result<AnalyzeResult, String> {
     let output = Command::new(&cmd_bin)
         .args(&args)
         .output()
-        .map_err(|e| format!("Failed to spawn yt-dlp: {}", e))?;
+        .map_err(|_| "Unable to launch local media engine.".to_string())?;
 
     if !output.status.success() {
         let err_str = String::from_utf8_lossy(&output.stderr);
-        let err_clean = err_str.lines().last().unwrap_or("Failed to extract video information.");
-        return Err(err_clean.to_string());
+        return Err(sanitize_engine_error(&err_str));
     }
 
     let json_val: serde_json::Value = serde_json::from_slice(&output.stdout)
-        .map_err(|e| format!("Failed to parse metadata: {}", e))?;
+        .map_err(|_| "Failed to parse media metadata.".to_string())?;
 
-    let title = json_val["title"].as_str().unwrap_or("Unknown Title").to_string();
+    let title = json_val["title"].as_str().unwrap_or("Media Stream").to_string();
     let thumbnail_url = json_val["thumbnail"].as_str().unwrap_or("").to_string();
     let duration_sec = json_val["duration"].as_i64().unwrap_or(0);
     let uploader = json_val["uploader"]
         .as_str()
         .or_else(|| json_val["channel"].as_str())
-        .unwrap_or("Unknown Creator")
+        .unwrap_or("Public Creator")
         .to_string();
     let view_count = json_val["view_count"].as_i64();
     let is_live = json_val["is_live"].as_bool().unwrap_or(false);
     let is_playlist = json_val.get("_type").and_then(|t| t.as_str()) == Some("playlist");
 
     let mut available_heights = Vec::new();
+    if let Some(h) = json_val["height"].as_i64() {
+        if h > 0 {
+            available_heights.push(h as i32);
+        }
+    }
     if let Some(formats) = json_val["formats"].as_array() {
         for f in formats {
             if let Some(h) = f["height"].as_i64() {
-                available_heights.push(h as i32);
+                if h > 0 {
+                    available_heights.push(h as i32);
+                }
             }
         }
     }
+
+    let has_audio = json_val["acodec"].as_str().map(|a| a != "none").unwrap_or(false)
+        || json_val["formats"].as_array().map(|fmts| {
+            fmts.iter().any(|f| f["acodec"].as_str().map(|a| a != "none").unwrap_or(false))
+        }).unwrap_or(true);
+
+    let max_detected_h = available_heights.iter().cloned().max().unwrap_or(0);
 
     let qualities_config = vec![
         ("8K", 4320, "8K Ultra HD"),
@@ -238,27 +276,58 @@ async fn analyze_local(url: String) -> Result<AnalyzeResult, String> {
         ("720p", 720, "720p HD"),
         ("480p", 480, "480p SD"),
         ("360p", 360, "360p SD"),
-        ("Audio", 0, "MP3 / M4A 320kbps"),
+        ("Audio", 0, "High Quality 320kbps MP3"),
     ];
 
     let mut qualities = Vec::new();
-    for (label, h, note) in qualities_config {
-        let is_avail = if h == 0 {
-            true
-        } else if available_heights.is_empty() && h <= 1080 {
-            true
-        } else {
-            available_heights.iter().any(|&avail_h| avail_h >= (h as f32 * 0.95) as i32)
-        };
 
+    if max_detected_h == 0 && available_heights.is_empty() {
+        // Direct media stream without height metadata
         qualities.push(QualityOption {
-            label: label.to_string(),
-            height: h,
-            available: is_avail,
+            label: "Original".to_string(),
+            height: 0,
+            available: true,
             estimated_bytes: None,
-            format_note: note.to_string(),
-            fps: if h >= 1080 { 60 } else { 30 },
+            format_note: "Source Quality Stream".to_string(),
+            fps: 30,
         });
+        if has_audio {
+            qualities.push(QualityOption {
+                label: "Audio".to_string(),
+                height: 0,
+                available: true,
+                estimated_bytes: None,
+                format_note: "High Quality 320kbps MP3".to_string(),
+                fps: 0,
+            });
+        }
+    } else {
+        for (label, h, note) in qualities_config {
+            if h == 0 {
+                if has_audio {
+                    qualities.push(QualityOption {
+                        label: label.to_string(),
+                        height: 0,
+                        available: true,
+                        estimated_bytes: None,
+                        format_note: note.to_string(),
+                        fps: 0,
+                    });
+                }
+            } else {
+                let is_avail = available_heights.iter().any(|&avail_h| avail_h >= (h as f32 * 0.95) as i32);
+                if is_avail {
+                    qualities.push(QualityOption {
+                        label: label.to_string(),
+                        height: h,
+                        available: true,
+                        estimated_bytes: None,
+                        format_note: note.to_string(),
+                        fps: if h >= 1080 { 60 } else { 30 },
+                    });
+                }
+            }
+        }
     }
 
     let url_hash = format!("{:x}", url.bytes().fold(0u64, |acc, b| acc.wrapping_mul(31).wrapping_add(b as u64)));

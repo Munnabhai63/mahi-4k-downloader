@@ -141,11 +141,13 @@ export default function App() {
       try {
         const res = await invoke<AnalyzeResult>('analyze_local', { url: toAnalyze });
         setMetadata(res);
-        // Default to highest available quality up to 4K
-        const best = res.qualities.find(q => q.available && q.height <= 2160 && q.height > 0)?.label || '1080p';
+        // Default to highest available video quality or first available option
+        const best = res.qualities.find(q => q.available && q.height <= 2160 && q.height > 0)?.label
+          || res.qualities.find(q => q.available)?.label
+          || 'Original';
         setSelectedQuality(best);
       } catch (err: any) {
-        setErrorMessage(typeof err === 'string' ? err : 'Unable to extract metadata on local engine.');
+        setErrorMessage(typeof err === 'string' ? err : 'This media is currently unavailable.');
       } finally {
         setAnalyzing(false);
       }
@@ -159,12 +161,10 @@ export default function App() {
           thumbnailUrl: '',
           durationSec: 213,
           uploader: 'Local Engine',
-          platform: 'youtube',
+          platform: 'generic',
           qualities: [
-            { label: '4K', height: 2160, available: true, formatNote: '4K Ultra HD', fps: 60 },
-            { label: '1080p', height: 1080, available: true, formatNote: '1080p Full HD', fps: 60 },
-            { label: '720p', height: 720, available: true, formatNote: '720p HD', fps: 30 },
-            { label: 'Audio', height: 0, available: true, formatNote: 'MP3 320kbps', fps: 0 },
+            { label: 'Original', height: 0, available: true, formatNote: 'Source Stream', fps: 30 },
+            { label: 'Audio', height: 0, available: true, formatNote: 'High Quality 320kbps MP3', fps: 0 },
           ],
           formats: ['mp4', 'mkv', 'mp3'],
         });
@@ -229,9 +229,9 @@ export default function App() {
           <div className="w-5 h-5 rounded bg-[#16A34A] flex items-center justify-center text-white text-[10px] font-bold">
             M4K
           </div>
-          <span className="text-xs font-bold text-[#0F172A]">My 4K Downloader Desktop</span>
+          <span className="text-xs font-bold text-[#0F172A]">My 4K Downloader</span>
           <span className="text-[10px] text-[#64748B] bg-[#F1F5F9] px-2 py-0.5 rounded-full font-mono">
-            Local Residential Engine
+            Universal Desktop Engine
           </span>
         </div>
         <div className="flex items-center gap-2">
@@ -257,9 +257,9 @@ export default function App() {
           <div className="w-12 h-12 rounded-2xl bg-[#F0FDF4] border border-[#DCFCE7] text-[#16A34A] flex items-center justify-center mx-auto mb-3 shadow-xs">
             <Play className="w-6 h-6 fill-current ml-0.5" />
           </div>
-          <h2 className="text-2xl font-bold text-[#0F172A]">Local Video & Audio Downloader</h2>
+          <h2 className="text-2xl font-bold text-[#0F172A]">Universal Media Downloader</h2>
           <p className="text-xs text-[#64748B] mt-1">
-            Downloads directly from provider CDN to <span className="font-semibold text-emerald-700">{savePath}</span>. Zero cloud storage.
+            Downloads directly to <span className="font-semibold text-emerald-700">{savePath}</span>. Zero cloud dependency.
           </p>
         </div>
 
@@ -268,7 +268,7 @@ export default function App() {
             {/* URL Input */}
             <div>
               <label className="block text-xs font-semibold text-[#0F172A] mb-1.5">
-                Video / Audio Link
+                Paste any video or media link
               </label>
               <div className="flex gap-2">
                 <Input
@@ -280,7 +280,7 @@ export default function App() {
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') handleAnalyze();
                   }}
-                  placeholder="Paste YouTube, Facebook, TikTok, Instagram, X link..."
+                  placeholder="Paste any video or media link..."
                   leftIcon={<Sparkles className="w-4 h-4 text-[#16A34A]" />}
                   className="flex-1"
                 />

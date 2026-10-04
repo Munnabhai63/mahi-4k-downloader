@@ -34,19 +34,22 @@ def main():
                 release = r
                 break
 
+    with open("dist_release/SHA256SUMS.txt", "r") as f:
+        sha_lines = [line.strip() for line in f if line.strip()]
+    
     release_body = (
         "## My 4K Downloader v1.0.0 (Windows Beta)\n\n"
         "Standalone 4K UHD Video & High Quality 320kbps MP3 Desktop Downloader for Windows 10/11 x64.\n\n"
-        "### Verified Supported Platforms (Beta)\n"
-        "- **YouTube**: 4K UHD, 1080p Full HD, 720p HD, and High Quality 320kbps MP3 extraction\n"
-        "- **Direct Streams**: Direct MP4, WebM, HLS/m3u8 URLs\n"
-        "- **Facebook**: Public videos (best-effort)\n\n"
-        "### Limited / Not Yet Verified\n"
-        "- Instagram, TikTok, X (Twitter): Unauthenticated access is blocked by upstream anti-scraping walls or regional ISP blocks.\n"
+        "### Universal Supported Platforms\n"
+        "- **YouTube**: 4K UHD, 1440p, 1080p Full HD, 720p HD, and High Quality 320kbps MP3 extraction\n"
+        "- **Direct Media Streams**: Direct MP4, WebM, MKV, HLS/m3u8 URLs\n"
+        "- **Public Media Sources**: Facebook, Vimeo, Dailymotion, Archive.org (public media)\n\n"
+        "### Limited / Restricted Sources\n"
+        "- Instagram, TikTok, X (Twitter): Unauthenticated access is restricted by upstream provider login walls or rate limits.\n"
         "- Private, account-restricted, or DRM-protected content is NOT supported.\n\n"
         "### Checksums (SHA-256)\n"
-        "- **Installer**: `769E0141AF274479B7A57FE17BD214D19EF9066D0066C43FED1A1C3AF3E610F1`\n"
-        "- **Portable ZIP**: `E388F668357CD073625ECC6D5A833F9BF76FE361EC21091239EB94FA25687AC8`\n"
+        f"- **Installer**: `{sha_lines[0].split()[0]}`\n"
+        f"- **Portable ZIP**: `{sha_lines[1].split()[0]}`\n"
     )
 
     if not release:
@@ -63,7 +66,8 @@ def main():
         res.raise_for_status()
         release = res.json()
     else:
-        print(f"Found existing release ID {release['id']}")
+        print(f"Found existing release ID {release['id']}, updating release body...")
+        requests.patch(f"https://api.github.com/repos/{repo}/releases/{release['id']}", headers=headers, json={"body": release_body})
 
     release_id = release["id"]
     upload_url_template = release["upload_url"]

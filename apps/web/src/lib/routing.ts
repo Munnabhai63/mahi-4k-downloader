@@ -10,7 +10,7 @@
 export type EngineRoute = 'WEB_RELIABLE' | 'DESKTOP_PREFERRED';
 
 export interface PlatformRouteInfo {
-  platform: 'youtube' | 'instagram' | 'tiktok' | 'twitter' | 'facebook' | 'archive' | 'direct' | 'generic';
+  platform: 'youtube' | 'instagram' | 'tiktok' | 'twitter' | 'facebook' | 'vimeo' | 'reddit' | 'dailymotion' | 'archive' | 'direct' | 'generic';
   engine: EngineRoute;
   displayName: string;
   recommendedResolution: string;
@@ -19,7 +19,7 @@ export interface PlatformRouteInfo {
   downloadAppUrl: string;
 }
 
-export const DESKTOP_APP_DOWNLOAD_URL = '/Mahi_4K_Downloader_Portable.zip';
+export const DESKTOP_APP_DOWNLOAD_URL = 'https://github.com/Munnabhai63/mahi-4k-downloader/releases/download/v1.0.0-beta/My_4K_Downloader_1.0.0_x64_Setup.exe';
 
 export function detectPlatformRoute(rawUrl: string): PlatformRouteInfo {
   const url = (rawUrl || '').trim();
@@ -91,7 +91,46 @@ export function detectPlatformRoute(rawUrl: string): PlatformRouteInfo {
     };
   }
 
-  // 6. Archive.org (Verified Web-Reliable)
+  // 6. Dailymotion (Verified Web-Reliable)
+  if (lower.includes('dailymotion.com') || lower.includes('dai.ly')) {
+    return {
+      platform: 'dailymotion',
+      engine: 'WEB_RELIABLE',
+      displayName: 'Dailymotion',
+      recommendedResolution: 'Up to 1080p HD',
+      guideMessage: 'Dailymotion public video processed directly via Web Engine.',
+      deepLink,
+      downloadAppUrl: DESKTOP_APP_DOWNLOAD_URL,
+    };
+  }
+
+  // 7. Vimeo (Web Reliable with Desktop Fallback)
+  if (lower.includes('vimeo.com')) {
+    return {
+      platform: 'vimeo',
+      engine: 'WEB_RELIABLE',
+      displayName: 'Vimeo',
+      recommendedResolution: 'Up to 1080p / 4K',
+      guideMessage: 'Vimeo video stream processed directly via Web Engine.',
+      deepLink,
+      downloadAppUrl: DESKTOP_APP_DOWNLOAD_URL,
+    };
+  }
+
+  // 8. Reddit (Verified Web-Reliable)
+  if (lower.includes('reddit.com') || lower.includes('v.redd.it')) {
+    return {
+      platform: 'reddit',
+      engine: 'WEB_RELIABLE',
+      displayName: 'Reddit',
+      recommendedResolution: 'HD Video with Audio',
+      guideMessage: 'Reddit video processed and audio-merged via Web Engine.',
+      deepLink,
+      downloadAppUrl: DESKTOP_APP_DOWNLOAD_URL,
+    };
+  }
+
+  // 9. Archive.org (Verified Web-Reliable)
   if (lower.includes('archive.org')) {
     return {
       platform: 'archive',
@@ -104,27 +143,31 @@ export function detectPlatformRoute(rawUrl: string): PlatformRouteInfo {
     };
   }
 
-  // 7. Direct media links
+  // 10. Direct media links (.mp4, .webm, .mkv, .m3u8, .mov, etc.)
   if (
     lower.endsWith('.mp4') ||
     lower.endsWith('.webm') ||
     lower.includes('.m3u8') ||
     lower.endsWith('.mov') ||
     lower.endsWith('.mkv') ||
-    lower.endsWith('.mp3')
+    lower.endsWith('.mp3') ||
+    lower.endsWith('.m4a') ||
+    lower.endsWith('.wav') ||
+    lower.includes('.mp4?') ||
+    lower.includes('.m3u8?')
   ) {
     return {
       platform: 'direct',
       engine: 'WEB_RELIABLE',
       displayName: 'Direct Stream',
-      recommendedResolution: 'Source Container',
+      recommendedResolution: 'Source Container Stream',
       guideMessage: 'Direct media file verified for instant browser streaming.',
       deepLink,
       downloadAppUrl: DESKTOP_APP_DOWNLOAD_URL,
     };
   }
 
-  // 8. Generic Web fallback
+  // 11. Generic Web fallback
   return {
     platform: 'generic',
     engine: 'WEB_RELIABLE',

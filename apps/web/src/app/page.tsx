@@ -408,7 +408,7 @@ export default function HomePage() {
           Free 4K Video Downloader
         </p>
         <p className="text-xs sm:text-sm text-[#64748B] max-w-lg mx-auto mb-8 font-medium">
-          Fast, ad-free downloads in 4K UHD, 1080p, and MP3 audio from YouTube, Facebook, Instagram, TikTok, WhatsApp, and 1,000+ sites.
+          Paste any supported public media link to download high definition video or High Quality 320kbps MP3 audio directly to your device.
         </p>
 
         {/* Paste Bar */}

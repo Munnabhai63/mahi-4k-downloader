@@ -437,22 +437,24 @@ export const VideoPreviewCard: React.FC<VideoPreviewCardProps> = ({
                   </span>
                 </div>
 
-                {/* Range Slider */}
-                <div className="px-1 py-1">
-                  <input
-                    type="range"
-                    min={0}
-                    max={Math.max(0, availableVideoQualities.length - 1)}
-                    step={1}
-                    value={activeQualityIndex >= 0 ? activeQualityIndex : availableVideoQualities.length - 1}
-                    onChange={(e) => {
-                      const idx = Number(e.target.value);
-                      const targetQ = availableVideoQualities[idx];
-                      if (targetQ) setSelectedQuality(targetQ.label);
-                    }}
-                    className="w-full accent-[#16A34A] cursor-pointer h-2.5 bg-slate-200 rounded-lg appearance-none transition-all"
-                  />
-                </div>
+                {/* Range Slider (only when multiple qualities exist) */}
+                {availableVideoQualities.length > 1 && (
+                  <div className="px-1 py-1">
+                    <input
+                      type="range"
+                      min={0}
+                      max={Math.max(0, availableVideoQualities.length - 1)}
+                      step={1}
+                      value={activeQualityIndex >= 0 ? activeQualityIndex : availableVideoQualities.length - 1}
+                      onChange={(e) => {
+                        const idx = Number(e.target.value);
+                        const targetQ = availableVideoQualities[idx];
+                        if (targetQ) setSelectedQuality(targetQ.label);
+                      }}
+                      className="w-full accent-[#16A34A] cursor-pointer h-2.5 bg-slate-200 rounded-lg appearance-none transition-all"
+                    />
+                  </div>
+                )}
 
                 {/* Stepper Resolution Pills */}
                 <div className="grid grid-cols-3 sm:grid-cols-5 gap-1.5 pt-1">

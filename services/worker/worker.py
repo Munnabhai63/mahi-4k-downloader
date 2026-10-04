@@ -429,45 +429,62 @@ def analyze_url(url: str, cookie_file: Optional[str] = None) -> Dict[str, Any]:
         ("720p", 720),
         ("480p", 480),
         ("360p", 360),
-        ("Audio", 0),
     ]
 
     qualities = []
 
-    for label, h in qualities_config:
-        if label == "Audio":
+    if not available_heights and not first_entry.get("height"):
+        # Direct media stream or single format without height metadata
+        qualities.append({
+            "label": "Original",
+            "height": 0,
+            "available": True,
+            "estimatedBytes": first_entry.get("filesize") or first_entry.get("filesize_approx"),
+            "formatNote": "Source Quality Stream",
+            "fps": 30
+        })
+        if has_audio:
             qualities.append({
                 "label": "Audio",
                 "height": 0,
-                "available": has_audio or len(formats) > 0,
+                "available": True,
                 "estimatedBytes": int(total_duration * 320 * 1024 / 8),
-                "formatNote": "MP3 / M4A / WAV up to 320kbps",
+                "formatNote": "High Quality 320kbps MP3",
                 "fps": 0
             })
-        else:
+    else:
+        # Genuine video streams with detected resolution levels
+        for label, h in qualities_config:
             is_avail = any(avail_h >= h * 0.95 for avail_h in available_heights)
-            if not available_heights and h <= 1080:
-                is_avail = True
+            if is_avail:
+                matched_format = height_to_format.get(h)
+                estimated_bytes = None
+                if matched_format:
+                    estimated_bytes = matched_format.get("filesize") or matched_format.get("filesize_approx")
+                    if not estimated_bytes and matched_format.get("tbr"):
+                        estimated_bytes = int(matched_format["tbr"] * 1000 / 8 * total_duration)
 
-            # Estimate byte size
-            estimated_bytes = None
-            matched_format = height_to_format.get(h)
-            if matched_format:
-                estimated_bytes = matched_format.get("filesize") or matched_format.get("filesize_approx")
-                if not estimated_bytes and matched_format.get("tbr"):
-                    estimated_bytes = int(matched_format["tbr"] * 1000 / 8 * total_duration)
+                if not estimated_bytes:
+                    bitrates = {4320: 35000, 2160: 16000, 1440: 8000, 1080: 4500, 720: 2500, 480: 1200, 360: 700}
+                    estimated_bytes = int(bitrates.get(h, 2000) * 1000 / 8 * total_duration)
 
-            if not estimated_bytes:
-                bitrates = {4320: 35000, 2160: 16000, 1440: 8000, 1080: 4500, 720: 2500, 480: 1200, 360: 700}
-                estimated_bytes = int(bitrates.get(h, 2000) * 1000 / 8 * total_duration)
+                qualities.append({
+                    "label": label,
+                    "height": h,
+                    "available": True,
+                    "estimatedBytes": estimated_bytes,
+                    "formatNote": f"{h}p Ultra HD" if h >= 1440 else f"{h}p HD" if h >= 720 else f"{h}p SD",
+                    "fps": 60 if h >= 1080 else 30
+                })
 
+        if has_audio:
             qualities.append({
-                "label": label,
-                "height": h,
-                "available": is_avail,
-                "estimatedBytes": estimated_bytes,
-                "formatNote": f"{h}p Ultra HD" if h >= 1440 else f"{h}p HD" if h >= 720 else f"{h}p SD",
-                "fps": 60 if h >= 1080 else 30
+                "label": "Audio",
+                "height": 0,
+                "available": True,
+                "estimatedBytes": int(total_duration * 320 * 1024 / 8),
+                "formatNote": "High Quality 320kbps MP3",
+                "fps": 0
             })
 
     # Subtitles extraction

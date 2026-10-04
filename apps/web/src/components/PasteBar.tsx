@@ -106,10 +106,10 @@ export const PasteBar: React.FC<PasteBarProps> = ({
                   inputMode="url"
                   value={url}
                   onChange={handleInputChange}
-                  placeholder="Paste YouTube, Facebook, Instagram, TikTok or WhatsApp shared link..."
+                  placeholder="Paste a video link..."
                   className="w-full bg-transparent py-2 text-sm sm:text-base text-[#0F172A] placeholder-[#94A3B8] focus:outline-none font-medium truncate"
                   required
-                  aria-label="Video or media URL"
+                  aria-label="Paste any supported media link"
                 />
 
                 {/* Micro Paste Pill */}
