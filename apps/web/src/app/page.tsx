@@ -11,7 +11,8 @@ import {
   Sparkles,
   ChevronDown,
   X,
-  Loader2
+  Loader2,
+  Download
 } from 'lucide-react';
 import { Card } from '@turbograb/ui';
 import { PasteBar } from '@/components/PasteBar';
@@ -578,8 +579,8 @@ export default function HomePage() {
             <div className="text-[11px] font-semibold text-[#64748B] uppercase tracking-wider mt-0.5">Ultra HD</div>
           </div>
           <div className="sm:border-r border-[#F1F5F9]">
-            <div className="text-xl sm:text-2xl font-black text-[#16A34A] font-poppins">1,000+</div>
-            <div className="text-[11px] font-semibold text-[#64748B] uppercase tracking-wider mt-0.5">Platforms</div>
+            <div className="text-xl sm:text-2xl font-black text-[#16A34A] font-poppins">320 kbps</div>
+            <div className="text-[11px] font-semibold text-[#64748B] uppercase tracking-wider mt-0.5">High Quality MP3</div>
           </div>
           <div className="border-r border-[#F1F5F9]">
             <div className="text-xl sm:text-2xl font-black text-[#16A34A] font-poppins">85 MB/s</div>
@@ -588,6 +589,118 @@ export default function HomePage() {
           <div>
             <div className="text-xl sm:text-2xl font-black text-[#16A34A] font-poppins">100%</div>
             <div className="text-[11px] font-semibold text-[#64748B] uppercase tracking-wider mt-0.5">Ad-Free & Clean</div>
+          </div>
+        </div>
+      </section>
+
+      {/* Windows Desktop Client (Beta) Showcase Section */}
+      <section id="desktop-app" className="w-full max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 my-8">
+        <div className="bg-gradient-to-br from-[#F0FDF4] via-white to-[#F8FAF9] border-2 border-[#16A34A]/30 rounded-3xl p-6 sm:p-8 shadow-sm">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 border-b border-[#DCFCE7]/70">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-2xl bg-[#DCFCE7] border border-[#86EFAC] flex items-center justify-center text-[#16A34A] shrink-0 shadow-xs">
+                <Sparkles className="w-6 h-6" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h2 className="text-xl sm:text-2xl font-black text-[#0F172A] font-poppins">
+                    My 4K Downloader for Windows
+                  </h2>
+                  <span className="px-2.5 py-0.5 rounded-full text-xs font-black uppercase tracking-wider bg-amber-100 text-amber-800 border border-amber-300 shadow-2xs">
+                    Beta v1.0.0
+                  </span>
+                </div>
+                <p className="text-xs text-[#475569] mt-0.5">
+                  Standalone Desktop Client • Bundled yt-dlp & FFmpeg 9.0 • 0 External Dependencies
+                </p>
+              </div>
+            </div>
+
+            {/* Direct Download Buttons */}
+            <div className="flex flex-wrap sm:flex-nowrap items-center gap-2.5 shrink-0">
+              <a
+                href="https://github.com/Munnabhai63/mahi-4k-downloader/releases/download/v1.0.0-beta/My_4K_Downloader_1.0.0_x64_Setup.exe"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-4 py-2.5 bg-[#16A34A] hover:bg-[#15803D] text-white text-xs font-bold rounded-xl shadow-xs transition-colors flex items-center gap-2"
+                title="Download Windows Installer (75.7 MB)"
+              >
+                <Download className="w-4 h-4" />
+                <span>Installer (.exe, 75MB)</span>
+              </a>
+
+              <a
+                href="https://github.com/Munnabhai63/mahi-4k-downloader/releases/download/v1.0.0-beta/My_4K_Downloader_v1.0.0_Portable_x64.zip"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-4 py-2.5 bg-white hover:bg-slate-50 border border-[#E2E8F0] text-[#0F172A] text-xs font-bold rounded-xl shadow-2xs transition-colors flex items-center gap-2"
+                title="Download Portable ZIP (102 MB)"
+              >
+                <Download className="w-4 h-4 text-[#16A34A]" />
+                <span>Portable (.zip, 102MB)</span>
+              </a>
+            </div>
+          </div>
+
+          {/* Platform Status Matrix */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-5">
+            {/* Verified Platforms */}
+            <div className="p-4 bg-white/90 rounded-2xl border border-[#86EFAC]/60 shadow-2xs">
+              <div className="flex items-center gap-2 mb-2 text-[#16A34A] font-bold text-xs uppercase tracking-wide">
+                <span className="w-2 h-2 rounded-full bg-[#16A34A]" />
+                <span>Verified Supported Platforms (Beta)</span>
+              </div>
+              <ul className="text-xs text-[#475569] space-y-1.5 leading-relaxed">
+                <li className="flex items-start gap-1.5">
+                  <span className="font-semibold text-slate-800">YouTube:</span>
+                  <span>4K UHD, 1080p Full HD, 720p HD, and High Quality 320kbps MP3 audio extraction.</span>
+                </li>
+                <li className="flex items-start gap-1.5">
+                  <span className="font-semibold text-slate-800">Direct Streams:</span>
+                  <span>Direct public MP4, WebM, and HLS/m3u8 media files.</span>
+                </li>
+                <li className="flex items-start gap-1.5">
+                  <span className="font-semibold text-slate-800">Facebook:</span>
+                  <span>Public video downloads (best-effort availability).</span>
+                </li>
+              </ul>
+            </div>
+
+            {/* Limited / Unverified Notice */}
+            <div className="p-4 bg-white/90 rounded-2xl border border-amber-200/80 shadow-2xs">
+              <div className="flex items-center gap-2 mb-2 text-amber-700 font-bold text-xs uppercase tracking-wide">
+                <span className="w-2 h-2 rounded-full bg-amber-500" />
+                <span>Limited / Not Yet Verified</span>
+              </div>
+              <ul className="text-xs text-[#64748B] space-y-1.5 leading-relaxed">
+                <li className="flex items-start gap-1.5">
+                  <span className="font-semibold text-slate-700">Instagram, TikTok, X (Twitter):</span>
+                  <span>Unauthenticated client access is restricted by platform anti-bot walls or ISP network restrictions.</span>
+                </li>
+                <li className="flex items-start gap-1.5">
+                  <span className="font-semibold text-slate-700">No Private or DRM Media:</span>
+                  <span>Private accounts, login-walled content, and DRM protected streams (Netflix, Prime, Spotify) are strictly not supported.</span>
+                </li>
+              </ul>
+            </div>
+          </div>
+
+          {/* Checksums & Verification Bar */}
+          <div className="mt-4 pt-3 border-t border-[#DCFCE7]/70 flex flex-wrap items-center justify-between text-[11px] text-[#64748B] gap-2">
+            <div className="flex items-center gap-2 font-mono">
+              <span className="font-semibold text-slate-700">SHA-256 Checksums:</span>
+              <a
+                href="https://github.com/Munnabhai63/mahi-4k-downloader/releases/download/v1.0.0-beta/SHA256SUMS.txt"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[#16A34A] hover:underline"
+              >
+                View SHA256SUMS.txt
+              </a>
+            </div>
+            <div className="text-slate-500">
+              Windows 10 / 11 (x64) • Standalone • No Python or Node.js required
+            </div>
           </div>
         </div>
       </section>

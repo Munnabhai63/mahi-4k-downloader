@@ -34,9 +34,14 @@ export const DesktopHandoffCard: React.FC<DesktopHandoffCardProps> = ({
             <Sparkles className="w-5 h-5" />
           </div>
           <div>
-            <h3 className="text-base sm:text-lg font-black text-[#0F172A] font-poppins">
-              Download with My 4K Downloader Desktop
-            </h3>
+            <div className="flex items-center gap-2">
+              <h3 className="text-base sm:text-lg font-black text-[#0F172A] font-poppins">
+                My 4K Downloader Desktop
+              </h3>
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-100 text-amber-800 border border-amber-300">
+                Beta
+              </span>
+            </div>
             <p className="text-xs font-semibold text-[#16A34A]">
               Recommended for {route.displayName} ({route.recommendedResolution})
             </p>
@@ -55,7 +60,7 @@ export const DesktopHandoffCard: React.FC<DesktopHandoffCardProps> = ({
       </div>
 
       <p className="text-xs sm:text-sm text-[#475569] leading-relaxed mb-3">
-        {route.displayName} restricts cloud datacenter servers. Our free Desktop App runs directly on your computer using your normal internet connection to deliver verified 4K UHD, 1080p, and MP3 audio directly to your device.
+        {route.displayName} restricts cloud datacenter servers. The Windows Desktop Beta app runs directly on your computer to deliver verified 4K UHD, 1080p, and High Quality 320kbps MP3 audio directly to your device.
       </p>
 
       {/* Target URL Badge */}
@@ -63,7 +68,19 @@ export const DesktopHandoffCard: React.FC<DesktopHandoffCardProps> = ({
         {url}
       </div>
 
-      {/* Two primary action buttons */}
+      {/* Verified vs Limited notice */}
+      <div className="p-3 bg-white/90 rounded-xl border border-[#E2E8F0] mb-3 text-[11px] space-y-1.5">
+        <div className="flex items-start gap-1.5 text-slate-700">
+          <span className="font-bold text-[#16A34A]">✓ Verified:</span>
+          <span>YouTube (4K/1080p/MP3), Direct MP4/WebM/HLS, Facebook (best-effort)</span>
+        </div>
+        <div className="flex items-start gap-1.5 text-slate-500">
+          <span className="font-bold text-amber-600">⚠ Limited / Unverified:</span>
+          <span>Instagram, TikTok, X (Twitter) unauthenticated scraping; Private/DRM content is not supported.</span>
+        </div>
+      </div>
+
+      {/* Primary action buttons */}
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 mb-3">
         <Button
           variant="primary"
@@ -75,30 +92,42 @@ export const DesktopHandoffCard: React.FC<DesktopHandoffCardProps> = ({
         </Button>
 
         <a
-          href="/Mahi_4K_Downloader_Portable.zip"
-          download="My_4K_Downloader_Portable.zip"
+          href="https://github.com/Munnabhai63/mahi-4k-downloader/releases/download/v1.0.0-beta/My_4K_Downloader_1.0.0_x64_Setup.exe"
+          target="_blank"
+          rel="noopener noreferrer"
           className="flex-1 py-2.5 px-4 bg-white hover:bg-slate-50 border border-[#E2E8F0] text-[#0F172A] text-xs font-bold rounded-xl flex items-center justify-center gap-2 transition-colors shadow-2xs text-center cursor-pointer"
         >
           <Download className="w-4 h-4 text-[#16A34A]" />
-          <span>Get Portable App (ZIP)</span>
+          <span>Windows Setup (.exe, 75MB)</span>
         </a>
       </div>
 
-      {/* Footer options: Installer and web fallback */}
+      {/* Footer options: Portable ZIP, Checksums, and web fallback */}
       <div className="flex flex-wrap items-center justify-between pt-2 border-t border-[#DCFCE7]/70 text-[11px] text-[#64748B] gap-2">
         <div className="flex items-center gap-1.5">
           <ShieldCheck className="w-3.5 h-3.5 text-[#16A34A]" />
-          <span>Standalone: Bundled yt-dlp & FFmpeg 9.0</span>
+          <span>Bundled yt-dlp & FFmpeg 9.0 (No Python/Node needed)</span>
         </div>
 
         <div className="flex items-center gap-2.5">
           <a
-            href="/My_4K_Downloader_Setup.exe"
-            download="My_4K_Downloader_Setup.exe"
+            href="https://github.com/Munnabhai63/mahi-4k-downloader/releases/download/v1.0.0-beta/My_4K_Downloader_v1.0.0_Portable_x64.zip"
+            target="_blank"
+            rel="noopener noreferrer"
             className="text-[#16A34A] hover:underline font-semibold"
-            title="Download full Windows Installer"
+            title="Download Portable ZIP (102MB)"
           >
-            Windows Setup (.exe)
+            Portable ZIP (102MB)
+          </a>
+          <span className="text-slate-300">•</span>
+          <a
+            href="https://github.com/Munnabhai63/mahi-4k-downloader/releases/download/v1.0.0-beta/SHA256SUMS.txt"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-slate-500 hover:underline"
+            title="View SHA-256 Checksums"
+          >
+            SHA256
           </a>
           {onTryWebAnyway && (
             <>
@@ -109,7 +138,7 @@ export const DesktopHandoffCard: React.FC<DesktopHandoffCardProps> = ({
                 disabled={isWebLoading}
                 className="text-[#64748B] hover:text-[#16A34A] underline font-medium cursor-pointer transition-colors"
               >
-                {isWebLoading ? 'Analyzing on Web...' : 'Try Web Download anyway'}
+                {isWebLoading ? 'Analyzing on Web...' : 'Try Web Download'}
               </button>
             </>
           )}
