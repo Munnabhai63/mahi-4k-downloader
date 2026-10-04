@@ -27,7 +27,7 @@ export function sanitizeUserError(rawMsg: string | undefined | null): string {
     lower.includes('temporarily unavailable') ||
     lower.includes('provider temporarily requires')
   ) {
-    return 'Unable to download this link right now.';
+    return 'YouTube bot protection triggered on cloud server. Please use our Desktop App for 100% instant download, or add Cookies in Settings.';
   }
 
   // Private or restricted content
