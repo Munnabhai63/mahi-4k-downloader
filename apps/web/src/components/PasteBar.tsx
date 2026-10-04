@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { Clipboard, Sparkles, Loader2, ArrowRight, Layers } from 'lucide-react';
 import { Button } from '@turbograb/ui';
+import { isYouTubeUrl } from '@/lib/routing';
 
 interface PasteBarProps {
   onAnalyze?: (url: string, useSmartMode?: boolean) => void;
@@ -40,10 +41,14 @@ export const PasteBar: React.FC<PasteBarProps> = ({
           setIsBatchMode(true);
           setBatchText(lines.join('\n'));
         } else {
+          const targetUrl = cleanSingle || trimmed;
           if (isBatchMode) {
-            setBatchText((prev) => (prev ? `${prev}\n${cleanSingle}` : cleanSingle));
+            setBatchText((prev) => (prev ? `${prev}\n${targetUrl}` : targetUrl));
           } else {
-            setUrl(cleanSingle || trimmed);
+            setUrl(targetUrl);
+            if (isYouTubeUrl(targetUrl) && onAnalyze) {
+              onAnalyze(targetUrl, false);
+            }
           }
         }
         setCopiedNotification(true);
@@ -64,6 +69,10 @@ export const PasteBar: React.FC<PasteBarProps> = ({
       return;
     }
     setUrl(val);
+    const clean = extractUrlFromText(val.trim());
+    if (clean && isYouTubeUrl(clean) && onAnalyze) {
+      onAnalyze(clean, false);
+    }
   };
 
   const handleSubmit = (e: React.FormEvent) => {

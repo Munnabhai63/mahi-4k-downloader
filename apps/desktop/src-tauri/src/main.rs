@@ -567,15 +567,22 @@ fn percent_decode(input: &str) -> String {
 }
 
 fn extract_m4k_url(arg: &str) -> Option<String> {
-    if arg.starts_with("m4k://") {
-        if let Some(idx) = arg.find("url=") {
-            let query_val = &arg[idx + 4..];
+    let clean = arg.trim_matches(|c| c == '"' || c == '\'' || c == ' ');
+    if clean.starts_with("m4k://") || clean.starts_with("m4k:") {
+        if let Some(idx) = clean.find("url=") {
+            let query_val = &clean[idx + 4..];
             let end_idx = query_val.find('&').unwrap_or(query_val.len());
-            let encoded = &query_val[..end_idx];
-            return Some(percent_decode(encoded));
+            let mut encoded = &query_val[..end_idx];
+            encoded = encoded.trim_end_matches('/');
+            let decoded = percent_decode(encoded);
+            let final_url = decoded.trim().to_string();
+            if final_url.starts_with("http://") || final_url.starts_with("https://") {
+                return Some(final_url);
+            }
+            return Some(decoded);
         }
-    } else if arg.starts_with("http://") || arg.starts_with("https://") {
-        return Some(arg.to_string());
+    } else if clean.starts_with("http://") || clean.starts_with("https://") {
+        return Some(clean.to_string());
     }
     None
 }

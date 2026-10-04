@@ -16,6 +16,7 @@ import { PasteBar } from '@/components/PasteBar';
 import { PlatformRow } from '@/components/PlatformRow';
 import { VideoPreviewCard } from '@/components/VideoPreviewCard';
 import { ActiveDownloads } from '@/components/ActiveDownloads';
+import { DesktopHandoffCard } from '@/components/DesktopHandoffCard';
 import {
   AnalyzeResult,
   DownloadItem,
@@ -24,7 +25,7 @@ import {
 } from '@turbograb/types';
 import { executeApiRequest } from '@/lib/api';
 import { sanitizeUserError } from '@/lib/errorSanitizer';
-import { isUnsupportedWebProvider } from '@/lib/routing';
+import { isUnsupportedWebProvider, isYouTubeUrl, detectPlatformRoute } from '@/lib/routing';
 import { Sparkles } from 'lucide-react';
 
 export default function HomePage() {
@@ -33,6 +34,7 @@ export default function HomePage() {
   const [analyzeResult, setAnalyzeResult] = useState<AnalyzeResult | null>(null);
   const [batchResults, setBatchResults] = useState<AnalyzeResult[]>([]);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [youtubeHandoffUrl, setYoutubeHandoffUrl] = useState<string | null>(null);
   const [activeDownloads, setActiveDownloads] = useState<DownloadItem[]>([]);
   const [isStartingDownload, setIsStartingDownload] = useState<boolean>(false);
 
@@ -52,7 +54,16 @@ export default function HomePage() {
     // Immediately evict any stale failed or cancelled jobs from the view
     setActiveDownloads((prev) => prev.filter((it) => it.status !== 'FAILED' && it.status !== 'CANCELLED'));
 
-    // Fail immediately before network call or queue creation for unsupported providers
+    // 1. YouTube handoff to local engine
+    if (isYouTubeUrl(trimmedUrl)) {
+      setYoutubeHandoffUrl(trimmedUrl);
+      setIsAnalyzing(false);
+      return;
+    }
+
+    setYoutubeHandoffUrl(null);
+
+    // 2. Fail immediately before network call or queue creation for unsupported providers
     if (isUnsupportedWebProvider(trimmedUrl)) {
       setErrorMessage('This source currently does not support direct web download.');
       setIsAnalyzing(false);
@@ -292,11 +303,11 @@ export default function HomePage() {
     },
     {
       q: 'Which platforms are supported on the website?',
-      a: 'The website supports Facebook public videos, Dailymotion, Archive.org, direct MP4/WebM/HLS streams, and other open media sources. YouTube, Instagram, TikTok, and X are restricted by those platforms when accessed from shared cloud servers.',
+      a: 'The website supports Facebook public videos, Dailymotion, Archive.org, and direct MP4/WebM/HLS streams directly in your browser. YouTube videos are downloaded via the companion My 4K Downloader Desktop engine for true 4K UHD and 320kbps MP3 audio.',
     },
     {
-      q: 'Why does YouTube sometimes not work on the website?',
-      a: 'Google actively blocks access from shared cloud server IP addresses to prevent mass downloading. This is a platform restriction, not a bug. Public Facebook videos, Dailymotion, and direct MP4/HLS files work reliably via the web.',
+      q: 'How do I download YouTube videos?',
+      a: 'Paste your YouTube link on the homepage. My 4K Downloader Desktop opens automatically to process and download your video in crisp 4K or 320kbps MP3 directly to your computer using your local internet.',
     },
     {
       q: 'Can I download Instagram or TikTok videos?',
@@ -343,6 +354,16 @@ export default function HomePage() {
           isLoading={isAnalyzing}
           onClearError={() => setErrorMessage(null)}
         />
+
+        {/* YouTube Desktop Handoff Card */}
+        {youtubeHandoffUrl && (
+          <DesktopHandoffCard
+            route={detectPlatformRoute(youtubeHandoffUrl)}
+            url={youtubeHandoffUrl}
+            onDismiss={() => setYoutubeHandoffUrl(null)}
+            autoLaunch={true}
+          />
+        )}
 
         {/* Neutral inline error — small, no drama */}
         {errorMessage && (
@@ -585,10 +606,10 @@ export default function HomePage() {
             </div>
           </div>
 
-          {/* Honest web limitation notice */}
-          <div className="p-4 bg-white rounded-2xl border border-amber-100">
+          {/* Platform note */}
+          <div className="p-4 bg-white rounded-2xl border border-slate-200">
             <p className="text-xs text-[#64748B] leading-relaxed">
-              <span className="font-bold text-amber-700">Platform availability note:</span> YouTube, Instagram, TikTok, and X restrict access from shared cloud servers. If a public URL cannot be processed, a short message is shown. Private, DRM-protected, or account-locked content is not supported.
+              <span className="font-bold text-[#16A34A]">Platform availability:</span> Facebook, Dailymotion, Archive.org, and direct media files download directly in your browser. YouTube videos download via the My 4K Downloader Desktop engine for true 4K UHD and 320kbps MP3 audio.
             </p>
           </div>
         </div>

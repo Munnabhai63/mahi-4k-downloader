@@ -20,12 +20,17 @@ export interface PlatformRouteInfo {
 }
 
 export const DESKTOP_APP_DOWNLOAD_URL = 'https://github.com/Munnabhai63/mahi-4k-downloader/releases/download/v1.0.0-beta/My_4K_Downloader_1.0.0_x64_Setup.exe';
+export const LOCAL_INSTALLER_PATH = '/My_4K_Downloader_1.0.0_x64_Setup.exe';
+
+export function isYouTubeUrl(rawUrl: string): boolean {
+  const lower = (rawUrl || '').toLowerCase();
+  return lower.includes('youtube.com') || lower.includes('youtu.be');
+}
 
 export function isUnsupportedWebProvider(rawUrl: string): boolean {
   const lower = (rawUrl || '').toLowerCase();
+  // YouTube is handled via dedicated local Desktop Engine handoff, NOT as a web unsupported error
   return (
-    lower.includes('youtube.com') ||
-    lower.includes('youtu.be') ||
     lower.includes('instagram.com') ||
     lower.includes('tiktok.com')
   );
@@ -36,14 +41,14 @@ export function detectPlatformRoute(rawUrl: string): PlatformRouteInfo {
   const lower = url.toLowerCase();
   const deepLink = `m4k://download?url=${encodeURIComponent(url)}`;
 
-  // 1. YouTube (Web Unsupported due to provider bot/login restrictions)
-  if (lower.includes('youtube.com') || lower.includes('youtu.be')) {
+  // 1. YouTube (Routed directly to Local Desktop Engine)
+  if (isYouTubeUrl(url)) {
     return {
       platform: 'youtube',
       engine: 'DESKTOP_PREFERRED',
       displayName: 'YouTube',
       recommendedResolution: 'Up to 4K UHD & 320kbps MP3',
-      guideMessage: 'This source currently does not support direct web download.',
+      guideMessage: 'Download YouTube video with My 4K Downloader Desktop.',
       deepLink,
       downloadAppUrl: DESKTOP_APP_DOWNLOAD_URL,
     };

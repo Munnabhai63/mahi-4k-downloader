@@ -144,13 +144,13 @@ export const PlatformRow: React.FC<PlatformRowProps> = ({ onSelectPlatform }) =>
     {
       id: 'youtube',
       name: 'YouTube',
-      badge: 'Web Unsupported',
-      badgeType: 'unsupported',
+      badge: '4K Desktop',
+      badgeType: 'desktop-app',
       sampleUrl: 'https://www.youtube.com/watch?v=1ZyIS1QAG68',
-      glowShadow: '0 12px 28px -4px rgba(239, 68, 68, 0.3), 0 0 20px rgba(239, 68, 68, 0.2)',
-      activeBorder: 'hover:border-red-400/50',
+      glowShadow: '0 12px 28px -4px rgba(220, 38, 38, 0.45), 0 0 20px rgba(220, 38, 38, 0.3)',
+      activeBorder: 'hover:border-red-500/60',
       icon: (
-        <svg viewBox="0 0 64 64" className="w-10 h-10 transition-transform duration-300 group-hover:scale-110 opacity-75 group-hover:opacity-100" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <svg viewBox="0 0 64 64" className="w-10 h-10 transition-transform duration-300 group-hover:scale-110" fill="none" xmlns="http://www.w3.org/2000/svg">
           <rect x="8" y="14" width="48" height="36" rx="12" fill="#DC2626" />
           <path d="M 27 24 L 41 32 L 27 40 Z" fill="#FFFFFF" />
         </svg>
@@ -196,6 +196,8 @@ export const PlatformRow: React.FC<PlatformRowProps> = ({ onSelectPlatform }) =>
     switch (type) {
       case 'fast-web':
         return 'text-[#16A34A] bg-[#DCFCE7] border border-[#86EFAC]';
+      case 'desktop-app':
+        return 'text-emerald-800 bg-emerald-50 border border-emerald-300 font-bold';
       case 'conditional':
         return 'text-amber-800 bg-amber-50 border border-amber-200';
       case 'partial':

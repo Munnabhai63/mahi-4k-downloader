@@ -18,9 +18,12 @@ if ($Unregister) {
 
 if (-not $AppPath) {
     $InstalledPath = "$env:LOCALAPPDATA\Programs\My 4K Downloader\My 4K Downloader.exe"
+    $PortablePath = "$PSScriptRoot\..\dist_release\My 4K Downloader Portable\My 4K Downloader.exe"
     $LocalRelease = "$PSScriptRoot\..\dist_portable\My 4K Downloader.exe"
     if (Test-Path $InstalledPath) {
         $AppPath = $InstalledPath
+    } elseif (Test-Path $PortablePath) {
+        $AppPath = (Resolve-Path $PortablePath).Path
     } elseif (Test-Path $LocalRelease) {
         $AppPath = (Resolve-Path $LocalRelease).Path
     } else {
