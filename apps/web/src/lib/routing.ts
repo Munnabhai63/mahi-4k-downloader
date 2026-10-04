@@ -4,7 +4,7 @@
  * HYBRID ROUTING SPECIFICATION:
  * - WEB_RELIABLE: Platforms verified to process reliably from cloud datacenter (Facebook, Archive.org, Direct MP4/WebM/HLS).
  * - DESKTOP_PREFERRED: Platforms that frequently trigger datacenter bot/verification blocks (YouTube, Instagram, TikTok, X).
- *   These are preferred on the local Tauri Desktop Engine for true 4K UHD, lossless MP3, and residential network speeds.
+ *   These are preferred on the local Tauri Desktop Engine for true 4K UHD, High Quality 320kbps MP3, and residential network speeds.
  */
 
 export type EngineRoute = 'WEB_RELIABLE' | 'DESKTOP_PREFERRED';

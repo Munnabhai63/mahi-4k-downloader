@@ -312,7 +312,7 @@ export default function HomePage() {
     {
       icon: <Zap className="w-5 h-5 text-[#16A34A]" />,
       title: '4K Desktop & HD Web',
-      desc: 'Lossless 4K video via local Desktop engine; fast 1080p and open media streams on Web.',
+      desc: 'Pristine 4K video via local Desktop engine; fast 1080p and open media streams on Web.',
     },
     {
       icon: <Globe className="w-5 h-5 text-[#16A34A]" />,
@@ -671,7 +671,7 @@ export default function HomePage() {
                 Studio-Quality Audio Extraction
               </h3>
               <p className="text-xs text-[#64748B] leading-relaxed">
-                Extract high-bitrate <strong>MP3 audio at 320kbps, 256kbps, 192kbps</strong>, as well as lossless M4A, AAC, and WAV audio streams with full metadata.
+                Extract <strong>High Quality 320kbps MP3 audio</strong>, as well as 256kbps, 192kbps, original AAC, and uncompressed WAV audio streams with full metadata.
               </p>
             </div>
 

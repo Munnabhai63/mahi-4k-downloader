@@ -75,32 +75,45 @@ export const DesktopHandoffCard: React.FC<DesktopHandoffCardProps> = ({
         </Button>
 
         <a
-          href={route.downloadAppUrl}
-          download="Mahi_4K_Downloader_Portable.zip"
+          href="/Mahi_4K_Downloader_Portable.zip"
+          download="My_4K_Downloader_Portable.zip"
           className="flex-1 py-2.5 px-4 bg-white hover:bg-slate-50 border border-[#E2E8F0] text-[#0F172A] text-xs font-bold rounded-xl flex items-center justify-center gap-2 transition-colors shadow-2xs text-center cursor-pointer"
         >
           <Download className="w-4 h-4 text-[#16A34A]" />
-          <span>Get Free App (1.3 MB)</span>
+          <span>Get Portable App (ZIP)</span>
         </a>
       </div>
 
-      {/* Optional fallback trigger */}
-      <div className="flex items-center justify-between pt-2 border-t border-[#DCFCE7]/70 text-[11px] text-[#64748B]">
+      {/* Footer options: Installer and web fallback */}
+      <div className="flex flex-wrap items-center justify-between pt-2 border-t border-[#DCFCE7]/70 text-[11px] text-[#64748B] gap-2">
         <div className="flex items-center gap-1.5">
           <ShieldCheck className="w-3.5 h-3.5 text-[#16A34A]" />
-          <span>100% Ad-Free • Direct to your disk</span>
+          <span>Standalone: Bundled yt-dlp & FFmpeg 9.0</span>
         </div>
 
-        {onTryWebAnyway && (
-          <button
-            type="button"
-            onClick={onTryWebAnyway}
-            disabled={isWebLoading}
-            className="text-[#64748B] hover:text-[#16A34A] underline font-medium cursor-pointer transition-colors"
+        <div className="flex items-center gap-2.5">
+          <a
+            href="/My_4K_Downloader_Setup.exe"
+            download="My_4K_Downloader_Setup.exe"
+            className="text-[#16A34A] hover:underline font-semibold"
+            title="Download full Windows Installer"
           >
-            {isWebLoading ? 'Analyzing on Web...' : 'Try Web Download anyway'}
-          </button>
-        )}
+            Windows Setup (.exe)
+          </a>
+          {onTryWebAnyway && (
+            <>
+              <span className="text-slate-300">•</span>
+              <button
+                type="button"
+                onClick={onTryWebAnyway}
+                disabled={isWebLoading}
+                className="text-[#64748B] hover:text-[#16A34A] underline font-medium cursor-pointer transition-colors"
+              >
+                {isWebLoading ? 'Analyzing on Web...' : 'Try Web Download anyway'}
+              </button>
+            </>
+          )}
+        </div>
       </div>
     </Card>
   );

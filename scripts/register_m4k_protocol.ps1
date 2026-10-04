@@ -9,9 +9,9 @@ $KeyPath = "HKCU:\Software\Classes\$ProtocolName"
 if ($Unregister) {
     if (Test-Path $KeyPath) {
         Remove-Item -Path $KeyPath -Recurse -Force
-        Write-Host "Successfully unregistered $ProtocolName:// protocol from HKCU."
+        Write-Host "Successfully unregistered ${ProtocolName}:// protocol from HKCU."
     } else {
-        Write-Host "Protocol $ProtocolName:// was not registered."
+        Write-Host "Protocol ${ProtocolName}:// was not registered."
     }
     return
 }
@@ -36,4 +36,4 @@ $CmdPath = "$KeyPath\shell\open\command"
 New-Item -Path $CmdPath -Force | Out-Null
 Set-ItemProperty -Path $CmdPath -Name "(Default)" -Value "`"$AppPath`" `"%1`""
 
-Write-Host "Successfully registered $ProtocolName:// protocol pointing to $AppPath"
+Write-Host "Successfully registered ${ProtocolName}:// protocol pointing to $AppPath"

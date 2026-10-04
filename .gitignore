@@ -51,6 +51,10 @@ temp_downloads/
 dist_package/
 backups/
 
+dist_release/
+apps/web/public/*.zip
+apps/web/public/*.exe
+
 # Python cache & venv
 __pycache__/
 *.pyc
