@@ -15,6 +15,14 @@ export function sanitizeUserError(rawMsg: string | undefined | null): string {
 
   const lower = rawMsg.toLowerCase();
 
+  // Neutral direct web download restriction from API
+  if (
+    lower.includes('unavailable for direct web download') ||
+    lower.includes('currently unavailable for direct')
+  ) {
+    return 'This media is currently unavailable for direct web download.';
+  }
+
   // Platform bot/verification checks or provider restriction
   if (
     lower.includes('not a bot') ||
@@ -27,7 +35,7 @@ export function sanitizeUserError(rawMsg: string | undefined | null): string {
     lower.includes('temporarily unavailable') ||
     lower.includes('provider temporarily requires')
   ) {
-    return 'Unable to process this link on web at this moment. The platform may require authentication or temporary restrictions are active.';
+    return 'This media is currently unavailable for direct web download.';
   }
 
   // Private or restricted content

@@ -34,7 +34,6 @@ export default function HomePage() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [activeDownloads, setActiveDownloads] = useState<DownloadItem[]>([]);
   const [isStartingDownload, setIsStartingDownload] = useState<boolean>(false);
-  const [lastAttemptedUrl, setLastAttemptedUrl] = useState<string>('');
 
   const [dynamicConfig] = useState<{
     announcementBanner: { enabled: boolean; message: string; level: string };
@@ -51,7 +50,6 @@ export default function HomePage() {
     setBatchResults([]);
     // Immediately evict any stale failed or cancelled jobs from the view
     setActiveDownloads((prev) => prev.filter((it) => it.status !== 'FAILED' && it.status !== 'CANCELLED'));
-    setLastAttemptedUrl(trimmedUrl);
     setIsAnalyzing(true);
 
     try {
@@ -345,16 +343,6 @@ export default function HomePage() {
               <span className="font-medium text-left">{errorMessage}</span>
             </div>
             <div className="flex items-center gap-2 shrink-0">
-              {lastAttemptedUrl && (
-                <button
-                  type="button"
-                  onClick={() => handleAnalyze(lastAttemptedUrl)}
-                  className="px-3 py-1 bg-[#16A34A] hover:bg-[#15803D] text-white text-[11px] font-bold rounded-lg transition-colors flex items-center gap-1 shadow-xs cursor-pointer"
-                  title="Retry"
-                >
-                  <span>Retry</span>
-                </button>
-              )}
               <button
                 type="button"
                 onClick={() => setErrorMessage(null)}
