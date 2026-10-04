@@ -18,9 +18,10 @@ export function sanitizeUserError(rawMsg: string | undefined | null): string {
   // Neutral direct web download restriction from API
   if (
     lower.includes('unavailable for direct web download') ||
-    lower.includes('currently unavailable for direct')
+    lower.includes('currently unavailable for direct') ||
+    lower.includes('does not support direct web download')
   ) {
-    return 'This media is currently unavailable for direct web download.';
+    return 'This source currently does not support direct web download.';
   }
 
   // Platform bot/verification checks or provider restriction
@@ -35,7 +36,7 @@ export function sanitizeUserError(rawMsg: string | undefined | null): string {
     lower.includes('temporarily unavailable') ||
     lower.includes('provider temporarily requires')
   ) {
-    return 'This media is currently unavailable for direct web download.';
+    return 'This source currently does not support direct web download.';
   }
 
   // Private or restricted content

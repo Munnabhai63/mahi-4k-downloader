@@ -344,6 +344,10 @@ def analyze_url(url: str, cookie_file: Optional[str] = None) -> Dict[str, Any]:
     clean_url = extract_clean_url(url)
     platform = detect_platform(clean_url)
 
+    # Fail fast for platforms that do not support direct web download
+    if platform in ("youtube", "instagram", "tiktok"):
+        raise RuntimeError("This source currently does not support direct web download.")
+
     ydl_opts: Dict[str, Any] = {
         "quiet": True,
         "no_warnings": True,
@@ -591,6 +595,11 @@ def analyze_url(url: str, cookie_file: Optional[str] = None) -> Dict[str, Any]:
 def download_video(spec: Dict[str, Any]):
     url = extract_clean_url(spec.get("url"))
     platform = detect_platform(url)
+
+    # Fail fast before download execution for unsupported web providers
+    if platform in ("youtube", "instagram", "tiktok"):
+        raise RuntimeError("This source currently does not support direct web download.")
+
     download_id = spec.get("downloadId") or spec.get("id") or str(int(time.time()))
     quality = spec.get("quality", "1080p")
     target_format = spec.get("format", "mp4").lower()

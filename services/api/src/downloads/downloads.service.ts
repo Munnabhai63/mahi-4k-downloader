@@ -1,5 +1,6 @@
 import {
   Injectable,
+  BadRequestException,
   NotFoundException,
   UnauthorizedException,
   ServiceUnavailableException,
@@ -124,6 +125,12 @@ export class DownloadsService {
     await this.analyzeService.validateUrlSecurity(cleanUrl);
     dto.url = cleanUrl;
 
+    // Fail immediately before queue creation for unsupported web providers
+    const platform = this.analyzeService.detectPlatform(cleanUrl);
+    if (platform === 'youtube' || platform === 'instagram' || platform === 'tiktok') {
+      throw new BadRequestException('This source currently does not support direct web download.');
+    }
+
     // Free disk space guard: prevent filling host disk if free space is under 50MB
     try {
       if (fs.existsSync(this.tempStoragePath)) {
@@ -145,7 +152,6 @@ export class DownloadsService {
 
     const downloadId = crypto.randomUUID();
     const urlHash = crypto.createHash('sha256').update(dto.url.trim()).digest('hex');
-    const platform = this.analyzeService.detectPlatform(dto.url);
 
     const item: DownloadItem = {
       id: downloadId,

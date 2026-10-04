@@ -13,7 +13,7 @@ export const metadata: Metadata = {
     template: '%s | My 4K Downloader',
   },
   description:
-    'Download 4K, 1080p videos and MP3 audio for free with My 4K Downloader. Fast, ad-free universal video downloader supporting YouTube, Instagram, TikTok, Facebook, and 1,000+ sites.',
+    'Download high-definition video and audio for free with My 4K Downloader. Fast, clean public media downloader for supported web video and audio links.',
   applicationName: 'My 4K Downloader',
   authors: [{ name: 'My 4K Downloader' }],
   creator: 'My 4K Downloader',
@@ -53,7 +53,7 @@ export const metadata: Metadata = {
     siteName: 'My 4K Downloader',
     title: 'My 4K Downloader – Free 4K Video Downloader',
     description:
-      'Download 4K, 1080p videos and MP3 audio for free with My 4K Downloader. Fast, ad-free universal video downloader supporting YouTube, Instagram, TikTok, Facebook, and 1,000+ sites.',
+      'Download high-definition video and audio for free with My 4K Downloader. Fast, clean public media downloader for supported web video and audio links.',
     images: [
       {
         url: '/og-image.png',
@@ -67,7 +67,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'My 4K Downloader – Free 4K Video Downloader',
     description:
-      'Download 4K, 1080p videos and MP3 audio for free with My 4K Downloader. Fast, ad-free universal video downloader supporting YouTube, Instagram, TikTok, Facebook, and 1,000+ sites.',
+      'Download high-definition video and audio for free with My 4K Downloader. Fast, clean public media downloader for supported web video and audio links.',
     images: ['/og-image.png'],
   },
   icons: {
@@ -118,7 +118,7 @@ const jsonLdWebApp = {
     priceCurrency: 'USD',
   },
   description:
-    'Free, ad-free universal video downloader supporting 4K, 8K, 1080p, and MP3 downloads from YouTube, Instagram, TikTok, Facebook, and 1,000+ platforms.',
+    'Free, clean public media downloader supporting video and MP3 audio downloads from supported public media links.',
   featureList: [
     '4K and 8K Ultra HD video downloads',
     'High-bitrate 320kbps MP3 audio extraction',

@@ -21,45 +21,55 @@ export interface PlatformRouteInfo {
 
 export const DESKTOP_APP_DOWNLOAD_URL = 'https://github.com/Munnabhai63/mahi-4k-downloader/releases/download/v1.0.0-beta/My_4K_Downloader_1.0.0_x64_Setup.exe';
 
+export function isUnsupportedWebProvider(rawUrl: string): boolean {
+  const lower = (rawUrl || '').toLowerCase();
+  return (
+    lower.includes('youtube.com') ||
+    lower.includes('youtu.be') ||
+    lower.includes('instagram.com') ||
+    lower.includes('tiktok.com')
+  );
+}
+
 export function detectPlatformRoute(rawUrl: string): PlatformRouteInfo {
   const url = (rawUrl || '').trim();
   const lower = url.toLowerCase();
   const deepLink = `m4k://download?url=${encodeURIComponent(url)}`;
 
-  // 1. YouTube (Desktop Preferred for 4K/8K & Residential IP extraction)
+  // 1. YouTube (Web Unsupported due to provider bot/login restrictions)
   if (lower.includes('youtube.com') || lower.includes('youtu.be')) {
     return {
       platform: 'youtube',
       engine: 'DESKTOP_PREFERRED',
       displayName: 'YouTube',
       recommendedResolution: 'Up to 4K UHD & 320kbps MP3',
-      guideMessage: 'YouTube restricts datacenter servers. Opening your Desktop App for direct, unthrottled 4K download.',
+      guideMessage: 'This source currently does not support direct web download.',
       deepLink,
       downloadAppUrl: DESKTOP_APP_DOWNLOAD_URL,
     };
   }
 
-  // 2. Instagram (Desktop Preferred for Reels & Stories)
+  // 2. Instagram (Web Unsupported due to login wall restrictions)
   if (lower.includes('instagram.com')) {
     return {
       platform: 'instagram',
       engine: 'DESKTOP_PREFERRED',
       displayName: 'Instagram',
       recommendedResolution: 'Original HD Reel & Audio',
-      guideMessage: 'Instagram requires residential access. Opening your Desktop App for high-speed local extraction.',
+      guideMessage: 'This source currently does not support direct web download.',
       deepLink,
       downloadAppUrl: DESKTOP_APP_DOWNLOAD_URL,
     };
   }
 
-  // 3. TikTok (Desktop Preferred for clean HD video)
+  // 3. TikTok (Web Unsupported due to bot verification restrictions)
   if (lower.includes('tiktok.com')) {
     return {
       platform: 'tiktok',
       engine: 'DESKTOP_PREFERRED',
       displayName: 'TikTok',
       recommendedResolution: 'Original HD & MP3',
-      guideMessage: 'TikTok is optimized via Desktop Engine for direct high-speed video and audio download.',
+      guideMessage: 'This source currently does not support direct web download.',
       deepLink,
       downloadAppUrl: DESKTOP_APP_DOWNLOAD_URL,
     };

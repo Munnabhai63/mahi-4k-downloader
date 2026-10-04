@@ -9,49 +9,15 @@ interface PlatformRowProps {
 export const PlatformRow: React.FC<PlatformRowProps> = ({ onSelectPlatform }) => {
   const platforms = [
     {
-      id: 'youtube',
-      name: 'YouTube',
-      badge: 'Web Beta',
-      sampleUrl: 'https://www.youtube.com/watch?v=nLKKoMptkOk',
-      glowShadow: '0 12px 28px -4px rgba(255, 0, 0, 0.5), 0 0 20px rgba(255, 0, 0, 0.35)',
-      activeBorder: 'hover:border-red-500/60',
-      icon: (
-        <svg viewBox="0 0 64 64" className="w-12 h-12 transition-transform duration-300 group-hover:scale-110" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <defs>
-            <radialGradient id="yt-glow" cx="45%" cy="35%" r="65%">
-              <stop offset="0%" stopColor="#FF3B30" />
-              <stop offset="65%" stopColor="#E60000" />
-              <stop offset="100%" stopColor="#990000" />
-            </radialGradient>
-            <linearGradient id="yt-spec" x1="0%" y1="0%" x2="0%" y2="100%">
-              <stop offset="0%" stopColor="#FFFFFF" stopOpacity="0.8" />
-              <stop offset="45%" stopColor="#FFFFFF" stopOpacity="0.15" />
-              <stop offset="100%" stopColor="#FFFFFF" stopOpacity="0" />
-            </linearGradient>
-            <linearGradient id="yt-triangle" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="#FFFFFF" />
-              <stop offset="100%" stopColor="#E2E8F0" />
-            </linearGradient>
-            <filter id="yt-3d-shadow" x="-20%" y="-20%" width="140%" height="150%">
-              <feDropShadow dx="0" dy="4" stdDeviation="3" floodColor="#000000" floodOpacity="0.35" />
-            </filter>
-          </defs>
-          <rect x="5" y="11" width="54" height="42" rx="14" fill="url(#yt-glow)" filter="url(#yt-3d-shadow)" />
-          <path d="M 18 53 C 8 53 5 49 5 40 L 5 43 C 5 51 11 53 18 53 L 46 53 C 53 53 59 51 59 43 L 59 40 C 59 49 55 53 46 53 Z" fill="#660000" opacity="0.6" />
-          <path d="M 7 21 C 7 15 12 12 19 12 L 45 12 C 52 12 57 15 57 21 C 46 25 18 25 7 21 Z" fill="url(#yt-spec)" />
-          <path d="M 27 24 L 43 32 L 27 40 Z" fill="url(#yt-triangle)" filter="drop-shadow(0 2px 3px rgba(0,0,0,0.4))" />
-        </svg>
-      ),
-    },
-    {
       id: 'facebook',
       name: 'Facebook',
       badge: 'Fast Web',
+      badgeType: 'fast-web',
       sampleUrl: 'https://www.facebook.com/watch?v=10153231379946729',
       glowShadow: '0 12px 28px -4px rgba(24, 119, 242, 0.5), 0 0 20px rgba(24, 119, 242, 0.35)',
       activeBorder: 'hover:border-blue-500/60',
       icon: (
-        <svg viewBox="0 0 64 64" className="w-12 h-12 transition-transform duration-300 group-hover:scale-110" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <svg viewBox="0 0 64 64" className="w-10 h-10 transition-transform duration-300 group-hover:scale-110" fill="none" xmlns="http://www.w3.org/2000/svg">
           <defs>
             <radialGradient id="fb-blue" cx="40%" cy="30%" r="70%">
               <stop offset="0%" stopColor="#2E8BFF" />
@@ -75,159 +41,192 @@ export const PlatformRow: React.FC<PlatformRowProps> = ({ onSelectPlatform }) =>
       ),
     },
     {
-      id: 'whatsapp',
-      name: 'WhatsApp',
+      id: 'dailymotion',
+      name: 'Dailymotion',
       badge: 'Fast Web',
-      sampleUrl: 'https://youtu.be/nLKKoMptkOk',
-      glowShadow: '0 12px 28px -4px rgba(37, 211, 102, 0.5), 0 0 20px rgba(37, 211, 102, 0.35)',
+      badgeType: 'fast-web',
+      sampleUrl: 'https://www.dailymotion.com/video/x8o0rbs',
+      glowShadow: '0 12px 28px -4px rgba(0, 102, 221, 0.45), 0 0 20px rgba(0, 102, 221, 0.3)',
+      activeBorder: 'hover:border-sky-500/60',
+      icon: (
+        <svg viewBox="0 0 64 64" className="w-10 h-10 transition-transform duration-300 group-hover:scale-110" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <radialGradient id="dm-grad" cx="40%" cy="30%" r="70%">
+              <stop offset="0%" stopColor="#0066DD" />
+              <stop offset="100%" stopColor="#002F6C" />
+            </radialGradient>
+          </defs>
+          <rect x="8" y="8" width="48" height="48" rx="14" fill="url(#dm-grad)" />
+          <text x="32" y="42" textAnchor="middle" fill="#FFFFFF" fontSize="28" fontWeight="bold" fontFamily="sans-serif">d</text>
+        </svg>
+      ),
+    },
+    {
+      id: 'archive',
+      name: 'Archive.org',
+      badge: 'Fast Web',
+      badgeType: 'fast-web',
+      sampleUrl: 'https://archive.org/details/Popeye_forPresident',
+      glowShadow: '0 12px 28px -4px rgba(100, 116, 139, 0.4), 0 0 20px rgba(100, 116, 139, 0.25)',
+      activeBorder: 'hover:border-slate-500/60',
+      icon: (
+        <svg viewBox="0 0 64 64" className="w-10 h-10 transition-transform duration-300 group-hover:scale-110" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="8" y="8" width="48" height="48" rx="14" fill="#334155" />
+          <path d="M 16 26 L 48 26 L 48 46 L 16 46 Z M 20 20 L 44 20 L 48 24 L 16 24 Z" fill="#F8FAFC" />
+          <path d="M 23 28 L 27 28 L 27 44 L 23 44 Z M 30 28 L 34 28 L 34 44 L 30 44 Z M 37 28 L 41 28 L 41 44 L 37 44 Z" fill="#334155" />
+        </svg>
+      ),
+    },
+    {
+      id: 'direct',
+      name: 'Direct Media',
+      badge: 'Fast Web',
+      badgeType: 'fast-web',
+      sampleUrl: 'https://www.w3schools.com/html/mov_bbb.mp4',
+      glowShadow: '0 12px 28px -4px rgba(22, 163, 74, 0.45), 0 0 20px rgba(22, 163, 74, 0.3)',
       activeBorder: 'hover:border-emerald-500/60',
       icon: (
-        <svg viewBox="0 0 64 64" className="w-12 h-12 transition-transform duration-300 group-hover:scale-110" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <defs>
-            <radialGradient id="wa-green" cx="40%" cy="30%" r="70%">
-              <stop offset="0%" stopColor="#4ADE80" />
-              <stop offset="60%" stopColor="#25D366" />
-              <stop offset="100%" stopColor="#128C7E" />
-            </radialGradient>
-            <filter id="wa-3d-shadow" x="-20%" y="-20%" width="140%" height="150%">
-              <feDropShadow dx="0" dy="4" stdDeviation="3" floodColor="#000000" floodOpacity="0.35" />
-            </filter>
-          </defs>
-          <circle cx="32" cy="32" r="25" fill="url(#wa-green)" filter="url(#wa-3d-shadow)" />
-          <path d="M 21 43 L 23.5 35 C 22.2 33 21.6 30.5 21.6 28 C 21.6 22.2 26.2 17.6 32 17.6 C 34.8 17.6 37.4 18.7 39.4 20.6 C 41.3 22.6 42.4 25.2 42.4 28 C 42.4 33.8 37.8 38.4 32 38.4 C 29.6 38.4 27.3 37.8 25.3 36.8 L 21 43 Z" fill="#FFFFFF" opacity="0.95" />
-          <path d="M 28 24.5 C 27.6 23.6 27.1 23.6 26.7 23.6 C 26.4 23.6 26 23.6 25.7 23.9 C 25.3 24.3 24.3 25.2 24.3 27.2 C 24.3 29.2 25.8 31.1 26 31.4 C 26.2 31.6 28.9 35.8 33 37.6 C 36.4 39 37.1 38.8 37.8 38.7 C 38.9 38.6 40.2 37.8 40.5 36.9 C 40.8 36 40.8 35.2 40.7 35.1 C 40.6 34.9 40.3 34.8 39.8 34.6 C 39.3 34.3 36.9 33.1 36.5 32.9 C 36.1 32.8 35.8 32.7 35.5 33.2 C 35.2 33.6 34.4 34.6 34.1 34.9 C 33.9 35.2 33.6 35.3 33.1 35 C 32.6 34.8 31.1 34.3 29.3 32.7 C 27.9 31.5 27 30 26.7 29.5 C 26.5 29.1 26.7 28.8 26.9 28.6 C 27.1 28.4 27.4 28.1 27.6 27.8 C 27.8 27.5 27.9 27.3 28.1 27 C 28.2 26.7 28.2 26.4 28.1 26.2 C 28 26 27.4 24.7 27.2 24.1 Z" fill="#128C7E" />
+        <svg viewBox="0 0 64 64" className="w-10 h-10 transition-transform duration-300 group-hover:scale-110" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="8" y="8" width="48" height="48" rx="14" fill="#16A34A" />
+          <circle cx="32" cy="32" r="16" stroke="#FFFFFF" strokeWidth="3" />
+          <path d="M 28 24 L 40 32 L 28 40 Z" fill="#FFFFFF" />
         </svg>
       ),
     },
     {
-      id: 'instagram',
-      name: 'Instagram',
-      badge: 'Limited',
-      sampleUrl: 'https://www.instagram.com/reel/C8t1M2UvQ6-/',
-      glowShadow: '0 12px 28px -4px rgba(225, 48, 108, 0.5), 0 0 20px rgba(250, 126, 30, 0.35)',
-      activeBorder: 'hover:border-pink-500/60',
+      id: 'vimeo',
+      name: 'Vimeo',
+      badge: 'Conditional',
+      badgeType: 'conditional',
+      sampleUrl: 'https://vimeo.com/76979871',
+      glowShadow: '0 12px 28px -4px rgba(26, 183, 234, 0.4), 0 0 20px rgba(26, 183, 234, 0.25)',
+      activeBorder: 'hover:border-cyan-500/60',
       icon: (
-        <svg viewBox="0 0 64 64" className="w-12 h-12 transition-transform duration-300 group-hover:scale-110" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <defs>
-            <radialGradient id="ig-sunset" cx="25%" cy="105%" r="115%">
-              <stop offset="0%" stopColor="#FFDD55" />
-              <stop offset="15%" stopColor="#FF543E" />
-              <stop offset="45%" stopColor="#C837AB" />
-              <stop offset="85%" stopColor="#5B51D8" />
-              <stop offset="100%" stopColor="#3B3298" />
-            </radialGradient>
-            <linearGradient id="ig-spec" x1="0%" y1="0%" x2="0%" y2="100%">
-              <stop offset="0%" stopColor="#FFFFFF" stopOpacity="0.75" />
-              <stop offset="55%" stopColor="#FFFFFF" stopOpacity="0.1" />
-              <stop offset="100%" stopColor="#FFFFFF" stopOpacity="0" />
-            </linearGradient>
-            <filter id="ig-3d-shadow" x="-20%" y="-20%" width="140%" height="150%">
-              <feDropShadow dx="0" dy="4" stdDeviation="3" floodColor="#000000" floodOpacity="0.35" />
-            </filter>
-          </defs>
-          <rect x="7" y="7" width="50" height="50" rx="15" fill="url(#ig-sunset)" filter="url(#ig-3d-shadow)" />
-          <path d="M 21 57 C 10 57 7 53 7 45 L 7 47 C 7 55 12 57 21 57 L 43 57 C 52 57 57 55 57 47 L 57 45 C 57 53 54 57 43 57 Z" fill="#201550" opacity="0.6" />
-          <path d="M 9 19 C 9 13 14 8 22 8 L 42 8 C 50 8 55 13 55 19 C 44 24 20 24 9 19 Z" fill="url(#ig-spec)" />
-          <rect x="16" y="16" width="32" height="32" rx="9" stroke="#FFFFFF" strokeWidth="3.2" fill="none" filter="drop-shadow(0 2px 3px rgba(0,0,0,0.3))" />
-          <circle cx="32" cy="32" r="8" stroke="#FFFFFF" strokeWidth="3.2" fill="none" filter="drop-shadow(0 2px 3px rgba(0,0,0,0.3))" />
-          <circle cx="41" cy="23" r="2.2" fill="#FFFFFF" filter="drop-shadow(0 1px 2px rgba(0,0,0,0.3))" />
+        <svg viewBox="0 0 64 64" className="w-10 h-10 transition-transform duration-300 group-hover:scale-110" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="8" y="8" width="48" height="48" rx="14" fill="#1AB7EA" />
+          <path d="M 45 22 C 44 26 39 36 34 36 C 30 36 29 27 26 23 C 24 19 21 21 19 22 L 18 24 C 21 21 24 20 27 25 C 29 30 31 43 36 43 C 43 43 49 29 49 22 Z" fill="#FFFFFF" />
         </svg>
       ),
     },
     {
-      id: 'tiktok',
-      name: 'TikTok',
-      badge: 'Limited',
-      sampleUrl: 'https://www.tiktok.com/@tiktok/video/7106594312292453678',
-      glowShadow: '0 12px 28px -4px rgba(0, 242, 254, 0.5), 0 0 20px rgba(254, 9, 121, 0.4)',
-      activeBorder: 'hover:border-cyan-400/60',
+      id: 'reddit',
+      name: 'Reddit',
+      badge: 'Partial',
+      badgeType: 'partial',
+      sampleUrl: 'https://www.reddit.com/r/NatureIsFuckingLit/comments/sample',
+      glowShadow: '0 12px 28px -4px rgba(255, 69, 0, 0.4), 0 0 20px rgba(255, 69, 0, 0.25)',
+      activeBorder: 'hover:border-orange-500/60',
       icon: (
-        <svg viewBox="0 0 64 64" className="w-12 h-12 transition-transform duration-300 group-hover:scale-110" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <defs>
-            <linearGradient id="tt-bg" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="#1E293B" />
-              <stop offset="50%" stopColor="#0F172A" />
-              <stop offset="100%" stopColor="#020617" />
-            </linearGradient>
-            <linearGradient id="tt-rim" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="#475569" />
-              <stop offset="100%" stopColor="#0F172A" />
-            </linearGradient>
-            <linearGradient id="tt-spec" x1="0%" y1="0%" x2="0%" y2="100%">
-              <stop offset="0%" stopColor="#FFFFFF" stopOpacity="0.45" />
-              <stop offset="100%" stopColor="#FFFFFF" stopOpacity="0" />
-            </linearGradient>
-            <filter id="tt-cyan-glow" x="-50%" y="-50%" width="200%" height="200%">
-              <feDropShadow dx="-1.5" dy="-1.5" stdDeviation="1.5" floodColor="#00F2FE" floodOpacity="0.9" />
-            </filter>
-            <filter id="tt-pink-glow" x="-50%" y="-50%" width="200%" height="200%">
-              <feDropShadow dx="1.5" dy="1.5" stdDeviation="1.5" floodColor="#FE0979" floodOpacity="0.9" />
-            </filter>
-          </defs>
-          <rect x="7" y="7" width="50" height="50" rx="15" fill="url(#tt-bg)" stroke="url(#tt-rim)" strokeWidth="1.5" filter="drop-shadow(0 4px 6px rgba(0,0,0,0.4))" />
-          <path d="M 9 19 C 9 13 14 8 22 8 L 42 8 C 50 8 55 13 55 19 C 44 23 20 23 9 19 Z" fill="url(#tt-spec)" />
-          <path d="M 33 16 L 39 16 C 40 21 44 25 49 26 L 49 31 C 45 31 41 29 38 26 L 38 39 C 38 44.5 33.5 49 28 49 C 22.5 49 18 44.5 18 39 C 18 33.5 22.5 29 28 29 C 29 29 30 29.2 31 29.6 L 31 35 C 30.2 34.6 29.2 34.4 28 34.4 C 25.5 34.4 23.4 36.5 23.4 39 C 23.4 41.5 25.5 43.6 28 43.6 C 30.5 43.6 32.6 41.5 32.6 39 L 32.6 16 Z" fill="#00F2FE" transform="translate(-1.8, -1.8)" opacity="0.95" filter="url(#tt-cyan-glow)" />
-          <path d="M 33 16 L 39 16 C 40 21 44 25 49 26 L 49 31 C 45 31 41 29 38 26 L 38 39 C 38 44.5 33.5 49 28 49 C 22.5 49 18 44.5 18 39 C 18 33.5 22.5 29 28 29 C 29 29 30 29.2 31 29.6 L 31 35 C 30.2 34.6 29.2 34.4 28 34.4 C 25.5 34.4 23.4 36.5 23.4 39 C 23.4 41.5 25.5 43.6 28 43.6 C 30.5 43.6 32.6 41.5 32.6 39 L 32.6 16 Z" fill="#FE0979" transform="translate(1.8, 1.8)" opacity="0.95" filter="url(#tt-pink-glow)" />
-          <path d="M 33 16 L 39 16 C 40 21 44 25 49 26 L 49 31 C 45 31 41 29 38 26 L 38 39 C 38 44.5 33.5 49 28 49 C 22.5 49 18 44.5 18 39 C 18 33.5 22.5 29 28 29 C 29 29 30 29.2 31 29.6 L 31 35 C 30.2 34.6 29.2 34.4 28 34.4 C 25.5 34.4 23.4 36.5 23.4 39 C 23.4 41.5 25.5 43.6 28 43.6 C 30.5 43.6 32.6 41.5 32.6 39 L 32.6 16 Z" fill="#FFFFFF" />
+        <svg viewBox="0 0 64 64" className="w-10 h-10 transition-transform duration-300 group-hover:scale-110" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="32" cy="32" r="24" fill="#FF4500" />
+          <circle cx="32" cy="32" r="14" fill="#FFFFFF" />
+          <circle cx="26" cy="31" r="2.5" fill="#FF4500" />
+          <circle cx="38" cy="31" r="2.5" fill="#FF4500" />
+          <path d="M 27 36 C 29 39 35 39 37 36" stroke="#FF4500" strokeWidth="2" strokeLinecap="round" />
         </svg>
       ),
     },
     {
       id: 'x',
       name: 'X (Twitter)',
-      badge: 'Limited',
+      badge: 'API / Limited',
+      badgeType: 'limited',
       sampleUrl: 'https://x.com/Twitter/status/1274062719266185217',
-      glowShadow: '0 12px 28px -4px rgba(255, 255, 255, 0.4), 0 0 20px rgba(148, 163, 184, 0.4)',
-      activeBorder: 'hover:border-slate-500/60',
+      glowShadow: '0 12px 28px -4px rgba(15, 23, 42, 0.4), 0 0 20px rgba(15, 23, 42, 0.25)',
+      activeBorder: 'hover:border-slate-600/60',
       icon: (
-        <svg viewBox="0 0 64 64" className="w-12 h-12 transition-transform duration-300 group-hover:scale-110" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <defs>
-            <linearGradient id="x-bg" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="#2A2D34" />
-              <stop offset="40%" stopColor="#14171A" />
-              <stop offset="100%" stopColor="#000000" />
-            </linearGradient>
-            <linearGradient id="x-rim" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="#657786" />
-              <stop offset="100%" stopColor="#1B1F24" />
-            </linearGradient>
-            <linearGradient id="x-chrome" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="#FFFFFF" />
-              <stop offset="50%" stopColor="#E2E8F0" />
-              <stop offset="100%" stopColor="#94A3B8" />
-            </linearGradient>
-            <linearGradient id="x-spec" x1="0%" y1="0%" x2="0%" y2="100%">
-              <stop offset="0%" stopColor="#FFFFFF" stopOpacity="0.45" />
-              <stop offset="100%" stopColor="#FFFFFF" stopOpacity="0" />
-            </linearGradient>
-          </defs>
-          <rect x="7" y="7" width="50" height="50" rx="15" fill="url(#x-bg)" stroke="url(#x-rim)" strokeWidth="1.5" filter="drop-shadow(0 4px 6px rgba(0,0,0,0.4))" />
-          <path d="M 9 19 C 9 13 14 8 22 8 L 42 8 C 50 8 55 13 55 19 C 44 23 20 23 9 19 Z" fill="url(#x-spec)" />
-          <path d="M 37.6 19 L 46 19 L 33.8 33.1 L 48.3 45 L 41.5 45 L 31.4 36.4 L 21.3 45 L 16 45 L 29.1 30.1 L 15.2 19 L 22.3 19 L 31.5 26.6 Z M 35.8 41.8 L 39.8 41.8 L 25.4 22.2 L 21.4 22.2 Z" fill="url(#x-chrome)" filter="drop-shadow(0 2px 4px rgba(0,0,0,0.5))" />
+        <svg viewBox="0 0 64 64" className="w-10 h-10 transition-transform duration-300 group-hover:scale-110" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="8" y="8" width="48" height="48" rx="14" fill="#000000" />
+          <path d="M 37.6 19 L 46 19 L 33.8 33.1 L 48.3 45 L 41.5 45 L 31.4 36.4 L 21.3 45 L 16 45 L 29.1 30.1 L 15.2 19 L 22.3 19 L 31.5 26.6 Z M 35.8 41.8 L 39.8 41.8 L 25.4 22.2 L 21.4 22.2 Z" fill="#FFFFFF" />
+        </svg>
+      ),
+    },
+    {
+      id: 'youtube',
+      name: 'YouTube',
+      badge: 'Web Unsupported',
+      badgeType: 'unsupported',
+      sampleUrl: 'https://www.youtube.com/watch?v=1ZyIS1QAG68',
+      glowShadow: '0 12px 28px -4px rgba(239, 68, 68, 0.3), 0 0 20px rgba(239, 68, 68, 0.2)',
+      activeBorder: 'hover:border-red-400/50',
+      icon: (
+        <svg viewBox="0 0 64 64" className="w-10 h-10 transition-transform duration-300 group-hover:scale-110 opacity-75 group-hover:opacity-100" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="8" y="14" width="48" height="36" rx="12" fill="#DC2626" />
+          <path d="M 27 24 L 41 32 L 27 40 Z" fill="#FFFFFF" />
+        </svg>
+      ),
+    },
+    {
+      id: 'instagram',
+      name: 'Instagram',
+      badge: 'Web Unsupported',
+      badgeType: 'unsupported',
+      sampleUrl: 'https://www.instagram.com/reel/C8t1M2UvQ6-/',
+      glowShadow: '0 12px 28px -4px rgba(225, 48, 108, 0.3), 0 0 20px rgba(225, 48, 108, 0.2)',
+      activeBorder: 'hover:border-pink-400/50',
+      icon: (
+        <svg viewBox="0 0 64 64" className="w-10 h-10 transition-transform duration-300 group-hover:scale-110 opacity-75 group-hover:opacity-100" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="8" y="8" width="48" height="48" rx="14" fill="#E1306C" />
+          <rect x="18" y="18" width="28" height="28" rx="8" stroke="#FFFFFF" strokeWidth="3" />
+          <circle cx="32" cy="32" r="7" stroke="#FFFFFF" strokeWidth="3" />
+          <circle cx="40" cy="24" r="2" fill="#FFFFFF" />
+        </svg>
+      ),
+    },
+    {
+      id: 'tiktok',
+      name: 'TikTok',
+      badge: 'Web Unsupported',
+      badgeType: 'unsupported',
+      sampleUrl: 'https://www.tiktok.com/@tiktok/video/7106594312292453678',
+      glowShadow: '0 12px 28px -4px rgba(0, 0, 0, 0.3), 0 0 20px rgba(0, 0, 0, 0.2)',
+      activeBorder: 'hover:border-slate-500/50',
+      icon: (
+        <svg viewBox="0 0 64 64" className="w-10 h-10 transition-transform duration-300 group-hover:scale-110 opacity-75 group-hover:opacity-100" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="8" y="8" width="48" height="48" rx="14" fill="#0F172A" />
+          <path d="M 33 18 L 38 18 C 39 22 42 25 46 26 L 46 30 C 43 30 40 28 37 26 L 37 38 C 37 43 33 46 28 46 C 23 46 19 42 19 37 C 19 32 23 28 28 28 C 29 28 30 28.2 31 28.5 L 31 33 C 30 32.7 29 32.5 28 32.5 C 26 32.5 24 34.5 24 37 C 24 39.5 26 41.5 28 41.5 C 30 41.5 32 39.5 32 37 L 32 18 Z" fill="#00F2FE" transform="translate(-1, -1)" opacity="0.9" />
+          <path d="M 33 18 L 38 18 C 39 22 42 25 46 26 L 46 30 C 43 30 40 28 37 26 L 37 38 C 37 43 33 46 28 46 C 23 46 19 42 19 37 C 19 32 23 28 28 28 C 29 28 30 28.2 31 28.5 L 31 33 C 30 32.7 29 32.5 28 32.5 C 26 32.5 24 34.5 24 37 C 24 39.5 26 41.5 28 41.5 C 30 41.5 32 39.5 32 37 L 32 18 Z" fill="#FE0979" transform="translate(1, 1)" opacity="0.9" />
+          <path d="M 33 18 L 38 18 C 39 22 42 25 46 26 L 46 30 C 43 30 40 28 37 26 L 37 38 C 37 43 33 46 28 46 C 23 46 19 42 19 37 C 19 32 23 28 28 28 C 29 28 30 28.2 31 28.5 L 31 33 C 30 32.7 29 32.5 28 32.5 C 26 32.5 24 34.5 24 37 C 24 39.5 26 41.5 28 41.5 C 30 41.5 32 39.5 32 37 L 32 18 Z" fill="#FFFFFF" />
         </svg>
       ),
     },
   ];
+
+  const getBadgeStyle = (type: string) => {
+    switch (type) {
+      case 'fast-web':
+        return 'text-[#16A34A] bg-[#DCFCE7] border border-[#86EFAC]';
+      case 'conditional':
+        return 'text-amber-800 bg-amber-50 border border-amber-200';
+      case 'partial':
+        return 'text-orange-800 bg-orange-50 border border-orange-200';
+      case 'limited':
+        return 'text-indigo-800 bg-indigo-50 border border-indigo-200';
+      case 'unsupported':
+      default:
+        return 'text-slate-600 bg-slate-100 border border-slate-200';
+    }
+  };
 
   return (
     <div id="platforms" className="w-full py-8">
       <div className="flex items-center justify-center gap-3 mb-6">
         <div className="h-px w-10 sm:w-16 bg-gradient-to-r from-transparent to-[#CBD5E1]" />
         <span className="text-[11px] sm:text-xs font-extrabold uppercase tracking-widest text-[#64748B] flex items-center gap-1.5">
-          <span>⚡</span> Supported Platforms
+          <span>⚡</span> Platform Status & Compatibility
         </span>
         <div className="h-px w-10 sm:w-16 bg-gradient-to-l from-transparent to-[#CBD5E1]" />
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3.5 sm:gap-4 max-w-4xl mx-auto px-2">
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 max-w-5xl mx-auto px-2">
         {platforms.map((p) => (
           <button
             key={p.id}
             type="button"
             onClick={() => onSelectPlatform && onSelectPlatform(p.name, p.sampleUrl)}
-            className={`group relative flex flex-col items-center justify-center p-3.5 sm:p-4 rounded-2xl bg-white/95 backdrop-blur-md border border-[#E2E8F0] shadow-sm hover:shadow-2xl transition-all duration-300 hover:-translate-y-2.5 active:scale-95 cursor-pointer focus:outline-none ${p.activeBorder}`}
+            className={`group relative flex flex-col items-center justify-center p-3.5 rounded-2xl bg-white/95 backdrop-blur-md border border-[#E2E8F0] shadow-xs hover:shadow-xl transition-all duration-300 hover:-translate-y-1.5 active:scale-95 cursor-pointer focus:outline-none ${p.activeBorder}`}
           >
-            {/* Ambient 3D Neon Glow floor */}
+            {/* Ambient Neon Glow */}
             <div
               className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none -z-10"
               style={{
@@ -235,24 +234,18 @@ export const PlatformRow: React.FC<PlatformRowProps> = ({ onSelectPlatform }) =>
               }}
             />
 
-            {/* 3D Realistic Icon */}
-            <div className="mb-2 filter drop-shadow-md group-hover:drop-shadow-xl transition-all duration-300">
+            {/* Icon */}
+            <div className="mb-2 filter drop-shadow-sm group-hover:drop-shadow-md transition-all duration-300">
               {p.icon}
             </div>
 
             {/* Platform Name */}
-            <span className="text-xs font-bold text-[#0F172A] group-hover:text-[#16A34A] transition-colors font-poppins text-center">
+            <span className="text-xs font-bold text-[#0F172A] group-hover:text-[#16A34A] transition-colors font-poppins text-center truncate w-full">
               {p.name}
             </span>
 
             {/* Web capability badge */}
-            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full mt-1.5 shrink-0 ${
-              p.badge === 'Limited'
-                ? 'text-amber-700 bg-amber-50'
-                : p.badge === 'Web Beta'
-                ? 'text-blue-700 bg-blue-50'
-                : 'text-[#16A34A] bg-[#DCFCE7]'
-            }`}>
+            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full mt-1.5 shrink-0 ${getBadgeStyle(p.badgeType)}`}>
               {p.badge}
             </span>
           </button>

@@ -1,5 +1,5 @@
-// TurboGrab PWA Service Worker - v4 (Network First with Cache Buster)
-const CACHE_NAME = 'turbograb-cache-v4-2fa5935';
+// TurboGrab PWA Service Worker - v5 (Network First with Cache Buster)
+const CACHE_NAME = 'turbograb-cache-v5-final';
 
 self.addEventListener('install', (event) => {
   self.skipWaiting();

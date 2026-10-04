@@ -144,6 +144,12 @@ export class AnalyzeService {
     const cleanUrl = this.extractUrl(url);
     await this.validateUrlSecurity(cleanUrl);
 
+    // Fail immediately for platforms that do not support direct web download
+    const platform = this.detectPlatform(cleanUrl);
+    if (platform === 'youtube' || platform === 'instagram' || platform === 'tiktok') {
+      throw new BadRequestException('This source currently does not support direct web download.');
+    }
+
     const normalizedUrl = cleanUrl.trim();
     const cached = this.metadataCache.get(normalizedUrl);
     if (cached && Date.now() - cached.timestamp < this.CACHE_TTL_MS) {
@@ -179,10 +185,10 @@ export class AnalyzeService {
           console.error(`[Worker Extraction Error] URL: ${cleanUrl}`, rawErr);
 
           const lowerErr = rawErr.toLowerCase();
-          let userSafeMsg = 'This media is currently unavailable for direct web download.';
+          let userSafeMsg = 'This source currently does not support direct web download.';
 
-          if (lowerErr.includes('not a bot') || lowerErr.includes('sign in to confirm')) {
-            userSafeMsg = 'This media is currently unavailable for direct web download.';
+          if (lowerErr.includes('not a bot') || lowerErr.includes('sign in to confirm') || lowerErr.includes('bot verification')) {
+            userSafeMsg = 'This source currently does not support direct web download.';
           } else if (lowerErr.includes('private video') || lowerErr.includes('this video is private') || lowerErr.includes('only works when logged-in')) {
             userSafeMsg = 'This video is private or restricted by its author.';
           } else if (lowerErr.includes('video unavailable') || lowerErr.includes('does not exist') || lowerErr.includes('not found') || lowerErr.includes('404')) {
@@ -198,7 +204,7 @@ export class AnalyzeService {
           } else if (lowerErr.includes('timeout') || lowerErr.includes('timed out') || lowerErr.includes('connection reset') || lowerErr.includes('network')) {
             userSafeMsg = 'Analysis timed out. Please check your connection and try again.';
           } else {
-            userSafeMsg = 'This media is currently unavailable for direct web download.';
+            userSafeMsg = 'This source currently does not support direct web download.';
           }
 
           return reject(new BadRequestException(userSafeMsg));

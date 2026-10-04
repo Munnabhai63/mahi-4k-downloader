@@ -24,6 +24,7 @@ import {
 } from '@turbograb/types';
 import { executeApiRequest } from '@/lib/api';
 import { sanitizeUserError } from '@/lib/errorSanitizer';
+import { isUnsupportedWebProvider } from '@/lib/routing';
 import { Sparkles } from 'lucide-react';
 
 export default function HomePage() {
@@ -50,6 +51,14 @@ export default function HomePage() {
     setBatchResults([]);
     // Immediately evict any stale failed or cancelled jobs from the view
     setActiveDownloads((prev) => prev.filter((it) => it.status !== 'FAILED' && it.status !== 'CANCELLED'));
+
+    // Fail immediately before network call or queue creation for unsupported providers
+    if (isUnsupportedWebProvider(trimmedUrl)) {
+      setErrorMessage('This source currently does not support direct web download.');
+      setIsAnalyzing(false);
+      return;
+    }
+
     setIsAnalyzing(true);
 
     try {
@@ -62,13 +71,13 @@ export default function HomePage() {
       const data = await res.json();
 
       if (!res.ok) {
-        throw new Error(data.message || 'This media is currently unavailable for direct web download.');
+        throw new Error(data.message || 'This source currently does not support direct web download.');
       }
 
       setAnalyzeResult(data);
     } catch (err: any) {
       setErrorMessage(
-        sanitizeUserError(err.message || 'This media is currently unavailable for direct web download.'),
+        sanitizeUserError(err.message || 'This source currently does not support direct web download.'),
       );
     } finally {
       setIsAnalyzing(false);
